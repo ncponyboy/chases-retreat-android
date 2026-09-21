@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chase's Retreat — Android</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f8f7f0;
+    --fg: #2b2a25;
+    --muted: #5b5748;
+    --accent: #1e8e3e;
+    --accent-fg: #ffffff;
+    --card: #ece9dd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1b17;
+      --fg: #f2f1ea;
+      --muted: #c9c4b3;
+      --accent: #7edb86;
+      --accent-fg: #1c1b17;
+      --card: #2a2820;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+    text-align: center;
+  }
+  h1 {
+    font-size: 1.7rem;
+    margin: 16px 0 4px;
+  }
+  .sub {
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  .download {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--accent-fg);
+    font-weight: 600;
+    font-size: 1.05rem;
+    text-decoration: none;
+    padding: 16px 32px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .version {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 40px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  h2 {
+    font-size: 1rem;
+    margin-top: 0;
+  }
+  ol {
+    margin: 0;
+    padding-left: 20px;
+  }
+  li { margin-bottom: 8px; }
+  li:last-child { margin-bottom: 0; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Chase's Retreat</h1>
+  <p class="sub">Guest app for Android</p>
+
+  <a class="download" href="chases-retreat-1.0.apk">Download for Android</a>
+  <p class="version">Version 1.0 &middot; direct install, not on the Play Store</p>
+
+  <div class="card">
+    <h2>Install instructions</h2>
+    <ol>
+      <li>Tap the download button above.</li>
+      <li>When Android warns about installing from an unknown source, tap <strong>Settings</strong>, then allow installs from this app (usually Chrome or Files).</li>
+      <li>Go back and tap the downloaded file to install.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Why isn't this on the Play Store?</h2>
+    <p style="margin:0">This app is built only for guests of Chase's Retreat in Piney Creek, NC — it's not meant for the general public, so it's distributed directly instead of through a public store listing.</p>
+  </div>
+</main>
+</body>
+</html>
