@@ -46,7 +46,7 @@
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		2FE624765BDE4DC4138CA710 /* NowPlayingInfoStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NowPlayingInfoStoreTests.swift; sourceTree = "<group>"; };
 		59B7DA191C857DA4E4F3A44A /* ChasesRetreatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChasesRetreatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		7555FF7B242A565900829871 /* MusicAssistantClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicAssistantClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7555FF7B242A565900829871 /* ChasesRetreat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChasesRetreat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA991F8C8A0917FDD5510709 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -142,7 +142,7 @@
 		7555FF7C242A565900829871 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				7555FF7B242A565900829871 /* MusicAssistantClient.app */,
+				7555FF7B242A565900829871 /* ChasesRetreat.app */,
 				59B7DA191C857DA4E4F3A44A /* ChasesRetreatTests.xctest */,
 			);
 			name = Products;
@@ -231,7 +231,7 @@
 				C851192D2F18C8A200185678 /* ogg */,
 			);
 			productName = iosApp;
-			productReference = 7555FF7B242A565900829871 /* MusicAssistantClient.app */;
+			productReference = 7555FF7B242A565900829871 /* ChasesRetreat.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
