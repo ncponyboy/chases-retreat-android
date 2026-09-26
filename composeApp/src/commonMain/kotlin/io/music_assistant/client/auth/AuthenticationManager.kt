@@ -1,0 +1,454 @@
+package io.music_assistant.client.auth
+
+import co.touchlab.kermit.Logger
+import io.music_assistant.client.api.Request
+import io.music_assistant.client.api.ServiceClient
+import io.music_assistant.client.branding.BrandConfig
+import io.music_assistant.client.data.model.server.AuthProvider
+import io.music_assistant.client.data.model.server.OauthUrl
+import io.music_assistant.client.data.model.server.User
+import io.music_assistant.client.settings.ConnectionHistoryEntry
+import io.music_assistant.client.settings.SettingsRepository
+import io.music_assistant.client.utils.AuthProcessState
+import io.music_assistant.client.utils.DataConnectionState
+import io.music_assistant.client.utils.SessionState
+import io.music_assistant.client.utils.mainDispatcher
+import io.music_assistant.client.utils.resultAs
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+sealed class AuthState {
+    data object Idle : AuthState()
+    data object Loading : AuthState()
+    data class ProvidersLoaded(val providers: List<AuthProvider>) : AuthState()
+    data class Authenticated(val user: User) : AuthState()
+    data class Error(val message: String) : AuthState()
+}
+
+private val log = Logger.withTag("AuthMgr")
+
+class AuthenticationManager(
+    private val serviceClient: ServiceClient,
+    private val settings: SettingsRepository,
+) : AuthCoordinator {
+    private val scope = CoroutineScope(SupervisorJob() + mainDispatcher)
+
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
+    override val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+    // OAuthHandler will be set by platform (e.g., MainActivity on Android)
+    var oauthHandler: OAuthHandler? = null
+
+    // True while an OAuth browser is open and we're awaiting its deep-link callback.
+    private var awaitingOAuthCallback = false
+
+    /**
+     * Token from an OAuth deep link, held until an auth attempt consumes it.
+     *
+     * The deep link foregrounds the app, and foregrounding tears the transport down for
+     * a reconnect. Sending the token straight away would write it into a socket that is
+     * already dying, so the server never sees it and the user gets a connectivity error
+     * on a login that actually succeeded. Instead we buffer the token and let the
+     * `AwaitingAuth(NotStarted)` branch below spend it once the transport settles — the
+     * same state-driven path the saved-token auto-login already uses. The token survives
+     * an aborted attempt, so a reconnect mid-round-trip retries instead of dead-ending.
+     */
+    private var pendingOAuthToken: String? = null
+
+    /** Guards against the two entry points spending [pendingOAuthToken] twice. */
+    private var authorizingOAuthToken = false
+
+    /** Fails the flow if [pendingOAuthToken] is never spent. */
+    private var pendingOAuthWatchdog: Job? = null
+
+    // Flag to prevent auto-login during intentional logout - using StateFlow for proper synchronization
+    private val _isLoggingOut = MutableStateFlow(false)
+    private val isLoggingOut: Boolean
+        get() = _isLoggingOut.value
+
+    /**
+     * Snapshot at construction: will the cold-launch auto-connect produce a silent auto-login?
+     * True iff the most-recent saved server has a saved token.
+     */
+    val willAutoLoginOnLaunch: Boolean =
+        settings.connectionHistory.value.firstOrNull()
+            ?.serverId?.let { settings.getTokenForServer(it) } != null
+
+    init {
+        // Monitor session state to update auth UI state
+        scope.launch {
+            serviceClient.sessionState.collect { state ->
+                if (state is SessionState.Connected) {
+                    when (val dataConnectionState = state.dataConnectionState) {
+                        is DataConnectionState.AwaitingAuth -> {
+                            when (dataConnectionState.authProcessState) {
+                                AuthProcessState.NotStarted -> {
+                                    // A pending OAuth token outranks the saved one: the user
+                                    // just completed an interactive login, so no server-id
+                                    // check applies — the fresh token defines the server.
+                                    val pending = pendingOAuthToken
+                                    if (pending != null) {
+                                        log.i { "AwaitingAuth(NotStarted) — spending pending OAuth token" }
+                                        authorizeWithOAuthToken(pending)
+                                    } else if (isLoggingOut) {
+                                        log.i { "AwaitingAuth(NotStarted) — skipping auto-login (logging out)" }
+                                    } else {
+                                        // Keyed by server id, so a different server at the
+                                        // same address simply has no token here: the login
+                                        // fields unblock instead of the flow dying.
+                                        val serverId = dataConnectionState.serverInfo.serverId
+                                        val token = settings.getTokenForServer(serverId)
+                                        if (token == null) {
+                                            // Locked build: no login UI is shown to the guest, so
+                                            // sign in with the fixed property credentials instead of
+                                            // waiting on input that will never come. A successful
+                                            // login saves a token, so every later launch takes the
+                                            // saved-token path above like a normal install.
+                                            //
+                                            // Calls serviceClient.login directly (bypassing the
+                                            // loginWithCredentials wrapper used by a real login
+                                            // screen) so this can pass isAutoLogin = true: from the
+                                            // guest's perspective there's no login UI, so this is a
+                                            // cold-launch auto-login like the saved-token path, and
+                                            // TopLevelNavRoot's navigate-to-Main check requires that
+                                            // flag — without it, a fresh install with no saved token
+                                            // authenticates successfully but never leaves the status
+                                            // screen.
+                                            log.i { "AwaitingAuth(NotStarted) — no saved token, using locked credentials" }
+                                            _isLoggingOut.value = false
+                                            _authState.value = AuthState.Loading
+                                            serviceClient.login(
+                                                username = BrandConfig.SERVER_USERNAME,
+                                                password = BrandConfig.SERVER_PASSWORD,
+                                                isAutoLogin = true,
+                                            )
+                                        } else {
+                                            log.i { "AwaitingAuth(NotStarted) — auto-login with saved token" }
+                                            authorizeWithSavedToken(token)
+                                        }
+                                    }
+                                }
+
+                                AuthProcessState.InProgress -> {
+                                    log.i { "AwaitingAuth(InProgress)" }
+                                    _authState.value = AuthState.Loading
+                                }
+
+                                is AuthProcessState.Failed -> {
+                                    clearPendingOAuthToken()
+                                    settings.setTokenForServer(
+                                        dataConnectionState.serverInfo.serverId,
+                                        null,
+                                    )
+                                    log.i { "Cleared token for server due to auth failure" }
+
+                                    log.i {
+                                        "AwaitingAuth(Failed): " +
+                                            dataConnectionState.authProcessState.reason
+                                    }
+                                    _authState.value =
+                                        AuthState.Error(dataConnectionState.authProcessState.reason)
+                                }
+
+                                AuthProcessState.LoggedOut -> {
+                                    clearPendingOAuthToken()
+                                    settings.setTokenForServer(
+                                        dataConnectionState.serverInfo.serverId,
+                                        null,
+                                    )
+                                    log.d { "Cleared token for server" }
+
+                                    log.i { "AwaitingAuth(LoggedOut)" }
+                                    _authState.value = AuthState.Idle
+                                }
+                            }
+                        }
+
+                        is DataConnectionState.Authenticated -> {
+                            state.user?.let { user ->
+                                clearPendingOAuthToken()
+                                log.i { "Authenticated" }
+                                _authState.value = AuthState.Authenticated(user)
+
+                                val serverInfo = dataConnectionState.serverInfo
+                                settings.setTokenForServer(
+                                    serverInfo.serverId,
+                                    dataConnectionState.token,
+                                )
+                                // The one point where the connection is proven to work and
+                                // the server has named itself, so the only place to save it.
+                                settings.addOrUpdateHistoryEntry(
+                                    ConnectionHistoryEntry.from(state, serverInfo),
+                                )
+                            }
+                        }
+
+                        DataConnectionState.AwaitingServerInfo -> {
+                            // Logged so a stuck reconnect (no `server/hello`) is observable.
+                            log.i { "AwaitingServerInfo" }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Recover from an abandoned OAuth flow: if the user backs out of the
+        // external browser, no callback arrives and authState is stuck on
+        // Loading. Only for handlers that cannot report the cancellation
+        // themselves — an in-app session does, and it never backgrounds the app,
+        // so for it this heuristic could only ever fire spuriously.
+        scope.launch {
+            serviceClient.foregroundEvents.collect {
+                if (oauthHandler?.reportsCancellation == true) return@collect
+                if (awaitingOAuthCallback) log.i { "OAuth flow abandoned (foregrounded without callback)" }
+                cancelOAuthFlow(reason = null)
+            }
+        }
+    }
+
+    override suspend fun getProviders(): Result<List<AuthProvider>> {
+        return try {
+            _authState.value = AuthState.Loading
+            val response = serviceClient.sendRequest(Request.Auth.providers())
+
+            if (response.isFailure) {
+                val error = "Failed to fetch auth providers"
+                _authState.value = AuthState.Error(error)
+                return Result.failure(Exception(error))
+            }
+
+            response.resultAs<List<AuthProvider>>()?.let { providers ->
+                _authState.value = AuthState.ProvidersLoaded(providers)
+                Result.success(providers)
+            } ?: run {
+                val error = "Failed to parse providers"
+                _authState.value = AuthState.Error(error)
+                Result.failure(Exception(error))
+            }
+        } catch (e: CancellationException) {
+            // Coroutine cancellation (e.g. AuthenticationViewModel's flatMapLatest
+            // switching loads on a session-state change) must propagate, not be
+            // swallowed by the broad catch below — otherwise it would spuriously
+            // drive authState to Error on every disconnect/connection-type switch.
+            throw e
+        } catch (e: Exception) {
+            val error = e.message ?: "Exception fetching providers"
+            _authState.value = AuthState.Error(error)
+            Result.failure(e)
+        }
+    }
+
+    @Suppress("UnusedParameter") // providerId reserved — current server login API doesn't yet route per-provider
+    override suspend fun loginWithCredentials(
+        providerId: String,
+        username: String,
+        password: String,
+    ): Result<Unit> {
+        return try {
+            _isLoggingOut.value = false  // Reset flag when user explicitly logs in
+            _authState.value = AuthState.Loading
+            serviceClient.login(username, password)
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val error = e.message ?: "Login failed"
+            _authState.value = AuthState.Error(error)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getOAuthUrl(providerId: String, returnUrl: String): Result<String> {
+        return try {
+            val response = serviceClient.sendRequest(
+                Request.Auth.authorizationUrl(providerId, returnUrl),
+            )
+
+            if (response.isFailure) {
+                return Result.failure(Exception("Failed to get OAuth URL"))
+            }
+
+            response.resultAs<OauthUrl>()?.let { oauthUrl ->
+                Result.success(oauthUrl.url)
+            } ?: Result.failure(Exception("Failed to parse OAuth URL"))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override fun startOAuthFlow(oauthUrl: String): Result<Unit> {
+        val handler = oauthHandler
+        if (handler == null) {
+            val error = "OAuth not supported on this platform"
+            _authState.value = AuthState.Error(error)
+            return Result.failure(Exception(error))
+        }
+
+        return try {
+            _authState.value = AuthState.Loading
+            // Set BEFORE the call, not after: a handler that fails synchronously
+            // reports it through cancelOAuthFlow() from inside openOAuthUrl, and
+            // setting the flag afterwards would resurrect a flow that already ended.
+            awaitingOAuthCallback = true
+            handler.openOAuthUrl(oauthUrl)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            awaitingOAuthCallback = false
+            val error = e.message ?: "OAuth flow failed"
+            _authState.value = AuthState.Error(error)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * End a pending OAuth flow that produced no token: the user dismissed the auth
+     * session, or presenting it failed.
+     *
+     * Idempotent and a no-op when no flow is pending, so the handler may call it
+     * without tracking whether anything else already settled the flow. [reason] is
+     * shown to the user; a plain dismissal passes null and drops back to [AuthState.Idle]
+     * silently.
+     */
+    fun cancelOAuthFlow(reason: String?) {
+        if (!awaitingOAuthCallback || _authState.value !is AuthState.Loading) return
+        awaitingOAuthCallback = false
+        log.i { "OAuth flow cancelled${reason?.let { ": $it" } ?: ""}" }
+        _authState.value = reason?.let { AuthState.Error(it) } ?: AuthState.Idle
+    }
+
+    /**
+     * Route an incoming URL that may be an OAuth callback. The single entry point for
+     * all three delivery paths: the iOS in-app auth session, the iOS deep-link handler
+     * and Android's launch intent.
+     *
+     * @return true when the URL was an OAuth callback and has been dealt with, so a
+     *   deep-link dispatcher knows not to forward it anywhere else.
+     */
+    fun handleOAuthCallbackUrl(urlString: String): Boolean =
+        when (val result = OAuthCallback.parse(urlString)) {
+            is OAuthCallbackResult.Code -> {
+                handleOAuthCallback(result.token)
+                true
+            }
+
+            is OAuthCallbackResult.Failed -> {
+                cancelOAuthFlow(result.reason)
+                true
+            }
+
+            OAuthCallbackResult.NotOAuth -> false
+        }
+
+    fun handleOAuthCallback(token: String) {
+        log.d { "OAuth callback received" }
+        // Clear synchronously (before the launch) so the foreground collector,
+        // which fires after this on the success path, sees no pending flow.
+        awaitingOAuthCallback = false
+        _isLoggingOut.value = false
+        pendingOAuthToken = token
+        _authState.value = AuthState.Loading
+
+        pendingOAuthWatchdog?.cancel()
+        pendingOAuthWatchdog = scope.launch {
+            delay(OAUTH_TOKEN_WAIT_MS)
+            if (pendingOAuthToken == null) return@launch
+            pendingOAuthToken = null
+            log.e { "OAuth: token unspent after ${OAUTH_TOKEN_WAIT_MS}ms — cannot authorize" }
+            _authState.value = AuthState.Error("Connection timeout. Please try again.")
+        }
+
+        // The session may already sit in a state that can spend the token — including
+        // `Failed` from an earlier attempt, which never emits again on its own. The
+        // collector saw that state before the token existed and a StateFlow does not
+        // repeat itself, so drive it here. `InProgress` is left alone: an attempt is
+        // already in flight, and its outcome re-enters the collector.
+        scope.launch {
+            val awaitingAuth = (serviceClient.sessionState.value as? SessionState.Connected)
+                ?.dataConnectionState as? DataConnectionState.AwaitingAuth
+            if (awaitingAuth != null && awaitingAuth.authProcessState != AuthProcessState.InProgress) {
+                authorizeWithOAuthToken(token)
+            }
+        }
+    }
+
+    /**
+     * Spend a deep-link OAuth token. The token is NOT cleared here: an attempt that the
+     * transport aborts mid-round-trip leaves the session state untouched, so the next
+     * `AwaitingAuth(NotStarted)` must be able to retry with it. Only a settled outcome
+     * (Authenticated, Failed, LoggedOut) or the watchdog clears it.
+     */
+    private suspend fun authorizeWithOAuthToken(token: String) {
+        if (authorizingOAuthToken) return
+        authorizingOAuthToken = true
+        try {
+            serviceClient.authorize(token, isAutoLogin = false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.e(e) { "Authorization failed" }
+            clearPendingOAuthToken()
+            _authState.value = AuthState.Error(e.message ?: "Authorization failed")
+        } finally {
+            authorizingOAuthToken = false
+        }
+    }
+
+    private fun clearPendingOAuthToken() {
+        pendingOAuthToken = null
+        pendingOAuthWatchdog?.cancel()
+        pendingOAuthWatchdog = null
+    }
+
+    private suspend fun authorizeWithSavedToken(token: String) {
+        try {
+            serviceClient.authorize(token, isAutoLogin = true)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Silent failure - user will see auth UI
+        }
+    }
+
+    override suspend fun logout(): Result<Unit> {
+        return try {
+            // Set flag FIRST, before any async operations
+            _isLoggingOut.value = true
+            clearPendingOAuthToken()
+            val currentState = serviceClient.sessionState.value
+            (currentState as? SessionState.Connected)?.serverInfo?.serverId?.let {
+                settings.setTokenForServer(it, null)
+            }
+
+            serviceClient.logout()
+            _authState.value = AuthState.Idle
+            // Keep the flag set to prevent auto-login until user explicitly logs in again
+            Result.success(Unit)
+        } catch (e: Exception) {
+            _isLoggingOut.value = false
+            Result.failure(e)
+        }
+    }
+
+    fun close() {
+        scope.cancel()
+    }
+
+    private companion object {
+        /**
+         * How long a deep-link OAuth token may wait for a transport that can spend it.
+         * Longer than the old connect wait because the window now covers a full
+         * foreground reconnect, including its backoff, not just a readiness check.
+         */
+        const val OAUTH_TOKEN_WAIT_MS = 20_000L
+    }
+}

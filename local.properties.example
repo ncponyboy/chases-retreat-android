@@ -1,0 +1,9 @@
+## Copy this file to local.properties (which is NOT committed) and fill in your own values.
+sdk.dir=/path/to/Android/sdk
+
+# The Music Assistant server the Music tab connects to, and the guest account on it.
+chasesretreat.server.host=192.168.x.x
+chasesretreat.server.port=8095
+chasesretreat.server.tls=false
+chasesretreat.server.username=Guest
+chasesretreat.server.password=change-me

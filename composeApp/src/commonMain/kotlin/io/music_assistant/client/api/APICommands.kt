@@ -1,0 +1,138 @@
+package io.music_assistant.client.api
+
+object APICommands {
+    // Player commands
+    const val PLAYERS_ALL = "players/all"
+    const val PLAYERS_CMD = "players/cmd"
+    const val PLAYERS_CMD_SEEK = "$PLAYERS_CMD/seek"
+    const val PLAYERS_CMD_POWER = "$PLAYERS_CMD/power"
+    const val PLAYERS_CMD_VOLUME_SET = "$PLAYERS_CMD/volume_set"
+    const val PLAYERS_CMD_VOLUME_MUTE = "$PLAYERS_CMD/volume_mute"
+    const val PLAYERS_CMD_GROUP_VOLUME = "$PLAYERS_CMD/group_volume"
+    const val PLAYERS_CMD_GROUP_VOLUME_MUTE = "$PLAYERS_CMD/group_volume_mute"
+    const val PLAYERS_CMD_SET_MEMBERS = "$PLAYERS_CMD/set_members"
+    const val PLAYERS_CMD_UNGROUP = "$PLAYERS_CMD/ungroup"
+    const val PLAYERS_SLEEP_TIMER_SET = "players/sleep_timer/set"
+    const val PLAYERS_SLEEP_TIMER_CLEAR = "players/sleep_timer/clear"
+
+    // Player Queue commands
+    const val PLAYER_QUEUES_ALL = "player_queues/all"
+    const val PLAYER_QUEUES_ITEMS = "player_queues/items"
+    const val PLAYER_QUEUES_MOVE_ITEM = "player_queues/move_item"
+    const val PLAYER_QUEUES_DELETE_ITEM = "player_queues/delete_item"
+    const val PLAYER_QUEUES_CLEAR = "player_queues/clear"
+    const val PLAYER_QUEUES_PLAY_INDEX = "player_queues/play_index"
+    const val PLAYER_QUEUES_TRANSFER = "player_queues/transfer"
+    const val PLAYER_QUEUES_REPEAT = "player_queues/repeat"
+    const val PLAYER_QUEUES_SHUFFLE = "player_queues/shuffle"
+    const val PLAYER_QUEUES_PLAY_MEDIA = "player_queues/play_media"
+    const val PLAYER_QUEUES_DONT_STOP_THE_MUSIC = "player_queues/dont_stop_the_music"
+    const val PLAYER_QUEUES_CROSSFADE = "player_queues/crossfade"
+    const val PLAYER_QUEUES_SET_PLAYBACK_SPEED = "player_queues/set_playback_speed"
+
+    // Playlist commands
+    const val MUSIC_PLAYLISTS_LIBRARY_ITEMS = "music/playlists/library_items"
+    const val MUSIC_PLAYLISTS_CREATE_PLAYLIST = "music/playlists/create_playlist"
+    const val MUSIC_PLAYLISTS_PLAYLIST_TRACKS = "music/playlists/playlist_tracks"
+    const val MUSIC_PLAYLISTS_ADD_PLAYLIST_TRACKS = "music/playlists/add_playlist_tracks"
+    const val MUSIC_PLAYLISTS_REMOVE_PLAYLIST_TRACKS = "music/playlists/remove_playlist_tracks"
+
+    // Podcast commands
+    const val MUSIC_PODCASTS_LIBRARY_ITEMS = "music/podcasts/library_items"
+    const val MUSIC_PODCASTS_PODCAST_EPISODES = "music/podcasts/podcast_episodes"
+
+    // Radio Station commands
+    const val MUSIC_RADIOS_LIBRARY_ITEMS = "music/radios/library_items"
+
+    // Audiobook commands
+    const val MUSIC_AUDIOBOOKS_LIBRARY_ITEMS = "music/audiobooks/library_items"
+
+    // Genre commands
+    const val MUSIC_GENRES_LIBRARY_ITEMS = "music/genres/library_items"
+    const val MUSIC_GENRES_OVERVIEW = "music/genres/overview"
+
+    // Artist commands
+    const val MUSIC_ARTISTS_LIBRARY_ITEMS = "music/artists/library_items"
+    const val MUSIC_ARTISTS_ARTIST_ALBUMS = "music/artists/artist_albums"
+    const val MUSIC_ARTISTS_ARTIST_TRACKS = "music/artists/artist_tracks"
+    const val MUSIC_ARTISTS_TOP_ALBUMS = "music/artists/top_albums"
+    const val MUSIC_ARTISTS_TOP_TRACKS = "music/artists/top_tracks"
+    const val MUSIC_ARTISTS_SIMILAR_ARTISTS = "music/artists/similar_artists"
+
+    // Album commands
+    const val MUSIC_ALBUMS_LIBRARY_ITEMS = "music/albums/library_items"
+    const val MUSIC_ALBUMS_ALBUM_TRACKS = "music/albums/album_tracks"
+
+    // Track commands
+    const val MUSIC_TRACKS_LIBRARY_ITEMS = "music/tracks/library_items"
+
+    // Library commands
+    const val MUSIC_LIBRARY_ADD_ITEM = "music/library/add_item"
+    const val MUSIC_LIBRARY_REMOVE_ITEM = "music/library/remove_item"
+    const val MUSIC_LIBRARY_GET = "music"
+
+    // Favorites commands
+    const val MUSIC_FAVORITES_ADD_ITEM = "music/favorites/add_item"
+    const val MUSIC_FAVORITES_REMOVE_ITEM = "music/favorites/remove_item"
+
+    // Mark commands
+    const val MUSIC_MARK_PLAYED = "music/mark_played"
+    const val MUSIC_MARK_UNPLAYED = "music/mark_unplayed"
+
+    // Metadata commands
+    const val METADATA_GET_TRACK_LYRICS = "metadata/get_track_lyrics"
+
+    // Browse
+    const val MUSIC_BROWSE = "music/browse"
+
+    // Search and recommendations
+    const val MUSIC_SEARCH = "music/search"
+    const val MUSIC_RECOMMENDATIONS = "music/recommendations"
+
+    // Contents of a single recommendation row. Exists on servers (2.10+) whose
+    // MUSIC_RECOMMENDATIONS response returns rows without embedded items
+    const val MUSIC_RECOMMENDATIONS_ITEMS = "music/recommendations/items"
+    const val PROVIDERS_MANIFESTS = "providers/manifests"
+    const val PROVIDERS = "providers"
+
+    // Items
+    const val MUSIC_ITEM_BY_URI = "music/item_by_uri"
+
+    // Auth commands
+    const val AUTH_PROVIDERS = "auth/providers"
+    const val AUTH_AUTHORIZATION_URL = "auth/authorization_url"
+    const val AUTH_LOGIN = "auth/login"
+    const val AUTH_LOGOUT = "auth/logout"
+    const val AUTH_ME = "auth/me"
+
+    // Scopes granted to each user role, as a role-id -> scope-list map. Used to gate UI
+    // on what the signed-in user may actually do. Available since 2.10.
+    const val AUTH_SCOPES = "auth/scopes"
+    const val AUTH = "auth"
+
+    // AI Radio plugin (optional provider, domain "ai_radio"). Only present when the
+    // plugin is installed, so every call site must go through the availability gate.
+    const val AI_RADIO_STATIONS_LIST = "ai_radio/stations/list"
+    const val AI_RADIO_START = "ai_radio/start"
+    const val AI_RADIO_STOP = "ai_radio/stop"
+    const val AI_RADIO_STATUS = "ai_radio/status"
+
+    // DSP commands
+    const val CONFIG_PLAYERS_DSP_GET = "config/players/dsp/get"
+    const val CONFIG_PLAYERS_DSP_SAVE = "config/players/dsp/save"
+    const val CONFIG_PLAYERS_DSP_APPLY_PRESET = "config/players/dsp/apply_preset"
+    const val CONFIG_DSP_PRESETS_GET = "config/dsp_presets/get"
+
+    // Media type kinds
+    const val KIND_ALBUMS = "albums"
+    const val KIND_ARTISTS = "artists"
+    const val KIND_PLAYLISTS = "playlists"
+    const val KIND_PODCASTS = "podcasts"
+    const val KIND_RADIOS = "radios"
+    const val KIND_AUDIOBOOKS = "audiobooks"
+    const val KIND_GENRES = "genres"
+
+    fun musicGet(kind: String) = "$MUSIC_LIBRARY_GET/$kind/get"
+
+    fun playersCmd(command: String) = "$PLAYERS_CMD/$command"
+}

@@ -1,0 +1,675 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
+		058557D9273AAEEB004C7B11 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557D8273AAEEB004C7B11 /* Preview Assets.xcassets */; };
+		06FCDF5F9AC6BE4A12AA70C9 /* NowPlayingInfoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E184B96B79725950AACD5BE7 /* NowPlayingInfoStore.swift */; };
+		0B4C257E50350DDBF95D87D5 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA991F8C8A0917FDD5510709 /* Foundation.framework */; };
+		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
+		6CF3E16270B477C8D3CDB192 /* NowPlayingInfoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E184B96B79725950AACD5BE7 /* NowPlayingInfoStore.swift */; };
+		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
+		C29F123E61DAA17B671EC955 /* NowPlayingInfoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE624765BDE4DC4138CA710 /* NowPlayingInfoStoreTests.swift */; };
+		C29F123E61DAA17B671EC956 /* PCMChunker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FCC1992F18C88B00185678 /* PCMChunker.swift */; };
+		C29F123E61DAA17B671EC957 /* PCMChunker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FCC1992F18C88B00185678 /* PCMChunker.swift */; };
+		C29F123E61DAA17B671EC958 /* PCMChunkerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FCC19A2F18C88B00185678 /* PCMChunkerTests.swift */; };
+		C85119262F18C7A900185678 /* Copus in Frameworks */ = {isa = PBXBuildFile; productRef = C85119252F18C7A900185678 /* Copus */; };
+		C85119282F18C7A900185678 /* Opus in Frameworks */ = {isa = PBXBuildFile; productRef = C85119272F18C7A900185678 /* Opus */; };
+		C851192B2F18C88B00185678 /* FLAC in Frameworks */ = {isa = PBXBuildFile; productRef = C851192A2F18C88B00185678 /* FLAC */; };
+		C851192E2F18C8A200185678 /* ogg in Frameworks */ = {isa = PBXBuildFile; productRef = C851192D2F18C8A200185678 /* ogg */; };
+		C8AV00012F2C000000000001 /* AppIntentVocabulary.plist in Resources */ = {isa = PBXBuildFile; fileRef = C8AV00022F2C000000000002 /* AppIntentVocabulary.plist */; };
+		C8CP00012F1A000000000001 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CP00032F1A000000000001 /* CarPlaySceneDelegate.swift */; };
+		C8CP00022F1A000000000002 /* CarPlayContentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CP00042F1A000000000002 /* CarPlayContentManager.swift */; };
+		C8CP00042F1A000000000004 /* CarPlayInterfaceControllerNavigationDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CP00062F1A000000000004 /* CarPlayInterfaceControllerNavigationDriver.swift */; };
+		C8CP00052F1A000000000005 /* CarPlayNavigationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CP00072F1A000000000005 /* CarPlayNavigationCoordinatorTests.swift */; };
+		C8FCC1922F17C6A9005E8312 /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FCC1912F17C6A9005E8312 /* NowPlayingCoordinator.swift */; };
+		C8FCC1952F17E001005E8312 /* NativeAudioController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FCC1962F17E001005E8312 /* NativeAudioController.swift */; };
+		C8FCC1972F17E001005E8312 /* AudioDecoders.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FCC1982F17E001005E8312 /* AudioDecoders.swift */; };
+		C8OA00022F1B000000000002 /* OAuthWebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8OA00012F1B000000000001 /* OAuthWebSession.swift */; };
+		C8OA00022F1B000000000004 /* LocalNetworkProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8OA00012F1B000000000003 /* LocalNetworkProbe.swift */; };
+		C8SI00012F1B000000000001 /* SiriIntentHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8SI00022F1B000000000001 /* SiriIntentHandler.swift */; };
+		D8CP1001F1A000000000001 /* CarPlayNavigationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8CP0001F1A000000000001 /* CarPlayNavigationCoordinator.swift */; };
+		D8CP1002F1A000000000002 /* CarPlayNavigationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8CP0001F1A000000000001 /* CarPlayNavigationCoordinator.swift */; };
+		E8RCH0012F1A000000000001 /* RemoteCommandHandlerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8RCH0002F1A000000000002 /* RemoteCommandHandlerStore.swift */; };
+		E8RCH0012F1A000000000003 /* RemoteCommandHandlerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8RCH0002F1A000000000002 /* RemoteCommandHandlerStore.swift */; };
+		E8RCH0012F1A000000000004 /* RemoteCommandHandlerStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8RCH0002F1A000000000005 /* RemoteCommandHandlerStoreTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		058557BA273AAA24004C7B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		058557D8273AAEEB004C7B11 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
+		2FE624765BDE4DC4138CA710 /* NowPlayingInfoStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NowPlayingInfoStoreTests.swift; sourceTree = "<group>"; };
+		59B7DA191C857DA4E4F3A44A /* ChasesRetreatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChasesRetreatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7555FF7B242A565900829871 /* MusicAssistantClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicAssistantClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA991F8C8A0917FDD5510709 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		AB3632DC29227652001CCB65 /* Config.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		C8AV00032F2C000000000003 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = en; path = en.lproj/AppIntentVocabulary.plist; sourceTree = "<group>"; };
+		C8CP00032F1A000000000001 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
+		C8CP00042F1A000000000002 /* CarPlayContentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayContentManager.swift; sourceTree = "<group>"; };
+		C8CP00062F1A000000000004 /* CarPlayInterfaceControllerNavigationDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayInterfaceControllerNavigationDriver.swift; sourceTree = "<group>"; };
+		C8CP00072F1A000000000005 /* CarPlayNavigationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayNavigationCoordinatorTests.swift; sourceTree = "<group>"; };
+		C8FCC1912F17C6A9005E8312 /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
+		C8FCC1962F17E001005E8312 /* NativeAudioController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAudioController.swift; sourceTree = "<group>"; };
+		C8FCC1982F17E001005E8312 /* AudioDecoders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDecoders.swift; sourceTree = "<group>"; };
+		C8FCC1992F18C88B00185678 /* PCMChunker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PCMChunker.swift; sourceTree = "<group>"; };
+		C8FCC19A2F18C88B00185678 /* PCMChunkerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PCMChunkerTests.swift; sourceTree = "<group>"; };
+		C8OA00012F1B000000000001 /* OAuthWebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthWebSession.swift; sourceTree = "<group>"; };
+		C8OA00012F1B000000000003 /* LocalNetworkProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNetworkProbe.swift; sourceTree = "<group>"; };
+		C8SI00022F1B000000000001 /* SiriIntentHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriIntentHandler.swift; sourceTree = "<group>"; };
+		D8CP0001F1A000000000001 /* CarPlayNavigationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayNavigationCoordinator.swift; sourceTree = "<group>"; };
+		E184B96B79725950AACD5BE7 /* NowPlayingInfoStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NowPlayingInfoStore.swift; sourceTree = "<group>"; };
+		E8RCH0002F1A000000000002 /* RemoteCommandHandlerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteCommandHandlerStore.swift; sourceTree = "<group>"; };
+		E8RCH0002F1A000000000005 /* RemoteCommandHandlerStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteCommandHandlerStoreTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		27BD6D1EFE0BB0E065ACEAA2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0B4C257E50350DDBF95D87D5 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B92378962B6B1156000C7307 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C851192E2F18C8A200185678 /* ogg in Frameworks */,
+				C85119262F18C7A900185678 /* Copus in Frameworks */,
+				C851192B2F18C88B00185678 /* FLAC in Frameworks */,
+				C85119282F18C7A900185678 /* Opus in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		058557D7273AAEEB004C7B11 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				058557D8273AAEEB004C7B11 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		42799AB246E5F90AF97AA0EF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A26246071203143DFB91C5EC /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6697875A889242950A65544F /* iosAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				2FE624765BDE4DC4138CA710 /* NowPlayingInfoStoreTests.swift */,
+				C8FCC19A2F18C88B00185678 /* PCMChunkerTests.swift */,
+				C8CP00072F1A000000000005 /* CarPlayNavigationCoordinatorTests.swift */,
+				E8RCH0002F1A000000000005 /* RemoteCommandHandlerStoreTests.swift */,
+			);
+			path = iosAppTests;
+			sourceTree = "<group>";
+		};
+		7555FF72242A565900829871 = {
+			isa = PBXGroup;
+			children = (
+				C8FCC1912F17C6A9005E8312 /* NowPlayingCoordinator.swift */,
+				C8FCC1962F17E001005E8312 /* NativeAudioController.swift */,
+				C8OA00012F1B000000000001 /* OAuthWebSession.swift */,
+				C8OA00012F1B000000000003 /* LocalNetworkProbe.swift */,
+				C8FCC1982F17E001005E8312 /* AudioDecoders.swift */,
+				AB1DB47929225F7C00F7AF9C /* Configuration */,
+				7555FF7D242A565900829871 /* iosApp */,
+				7555FF7C242A565900829871 /* Products */,
+				42799AB246E5F90AF97AA0EF /* Frameworks */,
+				E184B96B79725950AACD5BE7 /* NowPlayingInfoStore.swift */,
+				C8FCC1992F18C88B00185678 /* PCMChunker.swift */,
+				E8RCH0002F1A000000000002 /* RemoteCommandHandlerStore.swift */,
+				6697875A889242950A65544F /* iosAppTests */,
+			);
+			sourceTree = "<group>";
+		};
+		7555FF7C242A565900829871 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7555FF7B242A565900829871 /* MusicAssistantClient.app */,
+				59B7DA191C857DA4E4F3A44A /* ChasesRetreatTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7555FF7D242A565900829871 /* iosApp */ = {
+			isa = PBXGroup;
+			children = (
+				058557BA273AAA24004C7B11 /* Assets.xcassets */,
+				7555FF82242A565900829871 /* ContentView.swift */,
+				7555FF8C242A565B00829871 /* Info.plist */,
+				2152FB032600AC8F00CF470E /* iOSApp.swift */,
+				058557D7273AAEEB004C7B11 /* Preview Content */,
+				C8CP00052F1A000000000003 /* CarPlay */,
+				C8AV00022F2C000000000002 /* AppIntentVocabulary.plist */,
+			);
+			path = iosApp;
+			sourceTree = "<group>";
+		};
+		A26246071203143DFB91C5EC /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				AA991F8C8A0917FDD5510709 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		AB1DB47929225F7C00F7AF9C /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				AB3632DC29227652001CCB65 /* Config.xcconfig */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
+		C8CP00052F1A000000000003 /* CarPlay */ = {
+			isa = PBXGroup;
+			children = (
+				C8CP00032F1A000000000001 /* CarPlaySceneDelegate.swift */,
+				C8CP00042F1A000000000002 /* CarPlayContentManager.swift */,
+				D8CP0001F1A000000000001 /* CarPlayNavigationCoordinator.swift */,
+				C8CP00062F1A000000000004 /* CarPlayInterfaceControllerNavigationDriver.swift */,
+				C8SI00022F1B000000000001 /* SiriIntentHandler.swift */,
+			);
+			path = CarPlay;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		63EFA1ACA4B3EB88918F65A1 /* ChasesRetreatTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BD3D187223CC93EE01C96CB9 /* Build configuration list for PBXNativeTarget "ChasesRetreatTests" */;
+			buildPhases = (
+				37904671475C70F92C9A3F89 /* Sources */,
+				27BD6D1EFE0BB0E065ACEAA2 /* Frameworks */,
+				F16FE85132637763AF7932BA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ChasesRetreatTests;
+			productName = iosAppTests;
+			productReference = 59B7DA191C857DA4E4F3A44A /* ChasesRetreatTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		7555FF7A242A565900829871 /* ChasesRetreat */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7555FFA5242A565B00829871 /* Build configuration list for PBXNativeTarget "ChasesRetreat" */;
+			buildPhases = (
+				F36B1CEB2AD83DDC00CB74D5 /* Compile Kotlin Framework */,
+				7555FF77242A565900829871 /* Sources */,
+				B92378962B6B1156000C7307 /* Frameworks */,
+				7555FF79242A565900829871 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ChasesRetreat;
+			packageProductDependencies = (
+				C85119252F18C7A900185678 /* Copus */,
+				C85119272F18C7A900185678 /* Opus */,
+				C851192A2F18C88B00185678 /* FLAC */,
+				C851192D2F18C8A200185678 /* ogg */,
+			);
+			productName = iosApp;
+			productReference = 7555FF7B242A565900829871 /* MusicAssistantClient.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7555FF73242A565900829871 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1130;
+				LastUpgradeCheck = 2660;
+				ORGANIZATIONNAME = orgName;
+				TargetAttributes = {
+					7555FF7A242A565900829871 = {
+						CreatedOnToolsVersion = 11.3.1;
+					};
+				};
+			};
+			buildConfigurationList = 7555FF76242A565900829871 /* Build configuration list for PBXProject "ChasesRetreat" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 7555FF72242A565900829871;
+			packageReferences = (
+				C85119242F18C7A900185678 /* XCRemoteSwiftPackageReference "swift-opus" */,
+				C85119292F18C88B00185678 /* XCRemoteSwiftPackageReference "flac-binary-xcframework" */,
+				C851192C2F18C8A200185678 /* XCRemoteSwiftPackageReference "ogg-binary-xcframework" */,
+			);
+			productRefGroup = 7555FF7C242A565900829871 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7555FF7A242A565900829871 /* ChasesRetreat */,
+				63EFA1ACA4B3EB88918F65A1 /* ChasesRetreatTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7555FF79242A565900829871 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				058557D9273AAEEB004C7B11 /* Preview Assets.xcassets in Resources */,
+				058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */,
+				C8AV00012F2C000000000001 /* AppIntentVocabulary.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F16FE85132637763AF7932BA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		F36B1CEB2AD83DDC00CB74D5 /* Compile Kotlin Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Compile Kotlin Framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\n\n# Fail the Xcode phase as soon as any step (gradle, cp, codesign, ...) fails.\n# Without this, a gradle compile error followed by a successful cache-write / cp\n# / codesign leaves the phase exiting 0 and Xcode reporting \"Build succeeded\".\nset -e\n\n# Use JDK 21 — JDK 25 is incompatible with Gradle 8.13/Kotlin 2.3.0.\n# JAVA_HOME is expected to be set by the invoking environment:\n#   * GitHub Actions: actions/setup-java@v4 exports it\n#   * Local Xcode launched from CLI: shell rc exports it\n#   * Local Xcode.app launched from Dock: launchctl setenv JAVA_HOME ...\nexport PATH=\"$JAVA_HOME/bin:$PATH\"\n\ncd \"$SRCROOT/..\"\n\n# Skip ./gradlew when Kotlin sources and build config haven't changed since the\n# last successful run. Gradle detects this itself, but only after a ~30s daemon\n# startup (every Xcode build is a cold start). This gate saves that ~30s on\n# no-op re-archives (e.g. bump CFBundleVersion only); it doesn't help when\n# sources actually changed — gradle runs normally in that case.\nKMP_FRAMEWORK_DIR=\"$SRCROOT/../composeApp/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME/ComposeApp.framework\"\nHASH_FILE=\"$DERIVED_FILE_DIR/kotlin-source-hash\"\nCURRENT_HASH=$(\n  {\n    find composeApp/src -type f -name '*.kt*' -print0 | xargs -0 shasum\n    find composeApp/src/commonMain/composeResources -type f -print0 2>/dev/null | xargs -0 shasum\n    shasum build.gradle.kts composeApp/build.gradle.kts composeApp/compose-stability.conf gradle.properties gradle/libs.versions.toml settings.gradle.kts\n  } | shasum | awk '{print $1}'\n)\n\nif [ -f \"$HASH_FILE\" ] && [ \"$(cat \"$HASH_FILE\")\" = \"$CURRENT_HASH\" ] && [ -d \"$KMP_FRAMEWORK_DIR\" ]; then\n  echo \"Kotlin sources unchanged — skipping ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\"\nelse\n  ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n  mkdir -p \"$DERIVED_FILE_DIR\"\n  echo \"$CURRENT_HASH\" > \"$HASH_FILE\"\nfi\n\n# Copy WebRTC.framework slice into the KMP output directory so the linker can find it\nWEBRTC_XCFW=\"$SRCROOT/Frameworks/WebRTC.xcframework\"\nOUTPUT_DIR=\"$SRCROOT/../composeApp/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME\"\nif [[ \"$PLATFORM_NAME\" == *simulator* ]]; then\n  cp -Rf \"$WEBRTC_XCFW/ios-arm64_x86_64-simulator/WebRTC.framework\" \"$OUTPUT_DIR/\"\nelse\n  cp -Rf \"$WEBRTC_XCFW/ios-arm64/WebRTC.framework\" \"$OUTPUT_DIR/\"\nfi\n\n# Embed WebRTC.framework into the app bundle so dyld can find it at runtime\nBUNDLE_FRAMEWORKS=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Frameworks\"\nmkdir -p \"$BUNDLE_FRAMEWORKS\"\ncp -Rf \"$OUTPUT_DIR/WebRTC.framework\" \"$BUNDLE_FRAMEWORKS/\"\n\n# Sign WebRTC.framework with the same identity Xcode is using for this build.\n# EXPANDED_CODE_SIGN_IDENTITY is the cert hash for device builds and '-' (or empty) for simulator/ad-hoc.\n# Fall back to '-' (ad-hoc) if empty so simulator CLI builds still work.\ncodesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY:--}\" \"$BUNDLE_FRAMEWORKS/WebRTC.framework\"\n\n# Copy WebRTC's own dSYM into the archive (device builds only — that's the only slice\n# we have, and DWARF_DSYM_FOLDER_PATH is only set for dSYM-producing builds like\n# Release/Archive). The dSYM download is optional (see IOS-BUILD-INSTRUCTIONS.md), so\n# silently skip if it was never fetched rather than failing the build over it.\nWEBRTC_DSYM=\"$SRCROOT/Frameworks/WebRTC-dSYMs/ios-arm64/WebRTC.dSYM\"\nif [[ \"$PLATFORM_NAME\" != *simulator* ]] && [ -n \"$DWARF_DSYM_FOLDER_PATH\" ] && [ -d \"$WEBRTC_DSYM\" ]; then\n  mkdir -p \"$DWARF_DSYM_FOLDER_PATH\"\n  cp -Rf \"$WEBRTC_DSYM\" \"$DWARF_DSYM_FOLDER_PATH/\"\nfi\n\n# Copy Compose Multiplatform resources into the app bundle\n# The app reads them from <bundle>/compose-resources/composeResources/...\nif [[ \"$PLATFORM_NAME\" == *simulator* ]]; then\n  KMP_PLATFORM=iosSimulatorArm64\nelse\n  KMP_PLATFORM=iosArm64\nfi\nCOMPOSE_SRC=\"$SRCROOT/../composeApp/build/kotlin-multiplatform-resources/aggregated-resources/$KMP_PLATFORM\"\nCOMPOSE_DST=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/compose-resources\"\nif [ -d \"$COMPOSE_SRC\" ]; then\n  rm -rf \"$COMPOSE_DST\"\n  cp -Rf \"$COMPOSE_SRC/.\" \"$COMPOSE_DST/\"\n  echo \"Compose resources copied from $COMPOSE_SRC\"\nelse\n  echo \"WARNING: Compose resources not found at $COMPOSE_SRC\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		37904671475C70F92C9A3F89 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C29F123E61DAA17B671EC955 /* NowPlayingInfoStoreTests.swift in Sources */,
+				C29F123E61DAA17B671EC958 /* PCMChunkerTests.swift in Sources */,
+				C8CP00052F1A000000000005 /* CarPlayNavigationCoordinatorTests.swift in Sources */,
+				C29F123E61DAA17B671EC956 /* PCMChunker.swift in Sources */,
+				D8CP1002F1A000000000002 /* CarPlayNavigationCoordinator.swift in Sources */,
+				E8RCH0012F1A000000000003 /* RemoteCommandHandlerStore.swift in Sources */,
+				E8RCH0012F1A000000000004 /* RemoteCommandHandlerStoreTests.swift in Sources */,
+				6CF3E16270B477C8D3CDB192 /* NowPlayingInfoStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7555FF77242A565900829871 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
+				7555FF83242A565900829871 /* ContentView.swift in Sources */,
+				C8FCC1922F17C6A9005E8312 /* NowPlayingCoordinator.swift in Sources */,
+				D8CP1001F1A000000000001 /* CarPlayNavigationCoordinator.swift in Sources */,
+				C8CP00042F1A000000000004 /* CarPlayInterfaceControllerNavigationDriver.swift in Sources */,
+				C8FCC1952F17E001005E8312 /* NativeAudioController.swift in Sources */,
+				E8RCH0012F1A000000000001 /* RemoteCommandHandlerStore.swift in Sources */,
+				C29F123E61DAA17B671EC957 /* PCMChunker.swift in Sources */,
+				C8OA00022F1B000000000002 /* OAuthWebSession.swift in Sources */,
+				C8OA00022F1B000000000004 /* LocalNetworkProbe.swift in Sources */,
+				C8FCC1972F17E001005E8312 /* AudioDecoders.swift in Sources */,
+				C8CP00012F1A000000000001 /* CarPlaySceneDelegate.swift in Sources */,
+				C8CP00022F1A000000000002 /* CarPlayContentManager.swift in Sources */,
+				C8SI00012F1B000000000001 /* SiriIntentHandler.swift in Sources */,
+				06FCDF5F9AC6BE4A12AA70C9 /* NowPlayingInfoStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		C8AV00022F2C000000000002 /* AppIntentVocabulary.plist */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C8AV00032F2C000000000003 /* en */,
+			);
+			name = AppIntentVocabulary.plist;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		71BE7A433C230BFC4631BAEC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = U729L6G34Z;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.3;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.music-assistant.mobile-client.iosAppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		7555FFA3242A565B00829871 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB3632DC29227652001CCB65 /* Config.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = GUYFAK8DC6;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.3;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		7555FFA4242A565B00829871 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB3632DC29227652001CCB65 /* Config.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = GUYFAK8DC6;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		7555FFA6242A565B00829871 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = iosApp/CarPlay.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = U729L6G34Z;
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+					"$(SRCROOT)/Frameworks",
+				);
+				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chase's Retreat";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = "${APP_NAME}";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		7555FFA7242A565B00829871 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = iosApp/CarPlay.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = U729L6G34Z;
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+					"$(SRCROOT)/Frameworks",
+				);
+				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chase's Retreat";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = "${APP_NAME}";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		7AA734D8DA7ECBAE9344A7A2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = U729L6G34Z;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.3;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.music-assistant.mobile-client.iosAppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7555FF76242A565900829871 /* Build configuration list for PBXProject "ChasesRetreat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7555FFA3242A565B00829871 /* Debug */,
+				7555FFA4242A565B00829871 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7555FFA5242A565B00829871 /* Build configuration list for PBXNativeTarget "ChasesRetreat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7555FFA6242A565B00829871 /* Debug */,
+				7555FFA7242A565B00829871 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BD3D187223CC93EE01C96CB9 /* Build configuration list for PBXNativeTarget "ChasesRetreatTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71BE7A433C230BFC4631BAEC /* Release */,
+				7AA734D8DA7ECBAE9344A7A2 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C85119242F18C7A900185678 /* XCRemoteSwiftPackageReference "swift-opus" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/alta/swift-opus";
+			requirement = {
+				kind = versionRange;
+				maximumVersion = 1.0.0;
+				minimumVersion = 0.0.2;
+			};
+		};
+		C85119292F18C88B00185678 /* XCRemoteSwiftPackageReference "flac-binary-xcframework" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sbooth/flac-binary-xcframework.git";
+			requirement = {
+				kind = versionRange;
+				maximumVersion = 1.0.0;
+				minimumVersion = 0.1.0;
+			};
+		};
+		C851192C2F18C8A200185678 /* XCRemoteSwiftPackageReference "ogg-binary-xcframework" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sbooth/ogg-binary-xcframework.git";
+			requirement = {
+				kind = versionRange;
+				maximumVersion = 1.0.0;
+				minimumVersion = 0.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C85119252F18C7A900185678 /* Copus */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C85119242F18C7A900185678 /* XCRemoteSwiftPackageReference "swift-opus" */;
+			productName = Copus;
+		};
+		C85119272F18C7A900185678 /* Opus */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C85119242F18C7A900185678 /* XCRemoteSwiftPackageReference "swift-opus" */;
+			productName = Opus;
+		};
+		C851192A2F18C88B00185678 /* FLAC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C85119292F18C88B00185678 /* XCRemoteSwiftPackageReference "flac-binary-xcframework" */;
+			productName = FLAC;
+		};
+		C851192D2F18C8A200185678 /* ogg */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C851192C2F18C8A200185678 /* XCRemoteSwiftPackageReference "ogg-binary-xcframework" */;
+			productName = ogg;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 7555FF73242A565900829871 /* Project object */;
+}

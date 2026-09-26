@@ -1,0 +1,924 @@
+package io.music_assistant.client.api
+
+import io.music_assistant.client.data.factory.toLyricsRequestArg
+import io.music_assistant.client.data.factory.toMarkMediaItem
+import io.music_assistant.client.data.model.client.MediaType
+import io.music_assistant.client.data.model.client.QueueOption
+import io.music_assistant.client.data.model.client.RepeatMode
+import io.music_assistant.client.data.model.client.items.MarkableItem
+import io.music_assistant.client.data.model.server.DspConfig
+import io.music_assistant.client.utils.myJson
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import io.music_assistant.client.data.model.client.items.Track as TrackItem
+
+/**
+ * Shared `library_items` list filters that apply to every media type: music
+ * provider `instance_id`s and genre library ids. Each is emitted only when
+ * non-empty; the server accepts a JSON array for both.
+ */
+private fun JsonObjectBuilder.putListFilters(
+    providers: List<String>?,
+    genres: List<Int>?,
+) {
+    providers?.takeIf { it.isNotEmpty() }
+        ?.let { put("provider", JsonArray(it.map { p -> JsonPrimitive(p) })) }
+    genres?.takeIf { it.isNotEmpty() }
+        ?.let { put("genre", JsonArray(it.map { g -> JsonPrimitive(g) })) }
+}
+
+@Serializable
+data class Request @OptIn(ExperimentalUuidApi::class) constructor(
+    @SerialName("command") val command: String,
+    @SerialName("args") val args: JsonObject? = null,
+    @SerialName("message_id") val messageId: String = Uuid.random().toString(),
+) {
+    data object Player {
+        fun all() = Request(command = APICommands.PLAYERS_ALL)
+
+        fun simpleCommand(
+            playerId: String,
+            command: String,
+        ) = Request(
+            command = APICommands.playersCmd(command),
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+            },
+        )
+
+        fun setPower(
+            playerId: String,
+            powered: Boolean,
+        ) = Request(
+            command = APICommands.PLAYERS_CMD_POWER,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+                put("powered", JsonPrimitive(powered))
+            },
+        )
+
+        fun setSleepTimer(
+            playerId: String,
+            seconds: Int,
+        ) = Request(
+            command = APICommands.PLAYERS_SLEEP_TIMER_SET,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+                put("seconds", JsonPrimitive(seconds))
+            },
+        )
+
+        fun clearSleepTimer(
+            playerId: String,
+        ) = Request(
+            command = APICommands.PLAYERS_SLEEP_TIMER_CLEAR,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+            },
+        )
+
+        fun seek(
+            queueId: String,
+            position: Long,
+        ) = Request(
+            command = APICommands.PLAYERS_CMD_SEEK,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(queueId))
+                put("position", JsonPrimitive(position))
+            },
+        )
+
+        fun setVolume(
+            playerId: String,
+            volumeLevel: Double,
+        ) = Request(
+            command = APICommands.PLAYERS_CMD_VOLUME_SET,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+                put("volume_level", JsonPrimitive(volumeLevel))
+            },
+        )
+
+        fun setMute(
+            playerId: String,
+            muted: Boolean,
+        ) = Request(
+            command = APICommands.PLAYERS_CMD_VOLUME_MUTE,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+                put("muted", JsonPrimitive(muted))
+            },
+        )
+
+        fun setGroupVolume(
+            playerId: String,
+            volumeLevel: Double,
+        ) = Request(
+            command = APICommands.PLAYERS_CMD_GROUP_VOLUME,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+                put("volume_level", JsonPrimitive(volumeLevel))
+            },
+        )
+
+        fun setGroupMute(
+            playerId: String,
+            muted: Boolean,
+        ) = Request(
+            command = APICommands.PLAYERS_CMD_GROUP_VOLUME_MUTE,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+                put("muted", JsonPrimitive(muted))
+            },
+        )
+
+        fun setGroupMembers(
+            playerId: String,
+            playersToAdd: List<String>?,
+            playersToRemove: List<String>?,
+        ) = Request(
+            command = APICommands.PLAYERS_CMD_SET_MEMBERS,
+            args = buildJsonObject {
+                put("target_player", JsonPrimitive(playerId))
+                playersToAdd?.let {
+                    put(
+                        "player_ids_to_add",
+                        myJson.decodeFromString<JsonArray>(myJson.encodeToString(it)),
+                    )
+                }
+                playersToRemove?.let {
+                    put(
+                        "player_ids_to_remove",
+                        myJson.decodeFromString<JsonArray>(myJson.encodeToString(it)),
+                    )
+                }
+            },
+        )
+
+        /**
+         * Removes [playerId] from whatever group it is in. For an ad-hoc sync leader
+         * the server transfers the queue to a surviving member and resumes there; the
+         * client must not pick the new leader or call `player_queues/transfer` itself.
+         */
+        fun ungroup(playerId: String) = Request(
+            command = APICommands.PLAYERS_CMD_UNGROUP,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+            },
+        )
+    }
+
+    data object Queue {
+        fun all() = Request(command = APICommands.PLAYER_QUEUES_ALL)
+
+        fun items(
+            queueId: String,
+            limit: Int = Int.MAX_VALUE,
+            offset: Int = 0,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_ITEMS,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+                put("limit", JsonPrimitive(limit))
+                put("offset", JsonPrimitive(offset))
+            },
+        )
+
+        fun moveItem(
+            queueId: String,
+            queueItemId: String,
+            positionShift: Int,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_MOVE_ITEM,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+                put("queue_item_id", JsonPrimitive(queueItemId))
+                put("pos_shift", JsonPrimitive(positionShift))
+            },
+        )
+
+        fun removeItem(
+            queueId: String,
+            queueItemId: String,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_DELETE_ITEM,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+                put("item_id_or_index", JsonPrimitive(queueItemId))
+            },
+        )
+
+        fun clear(
+            queueId: String,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_CLEAR,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+            },
+        )
+
+        fun playIndex(
+            queueId: String,
+            queueItemId: String,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_PLAY_INDEX,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+                put("index", JsonPrimitive(queueItemId))
+            },
+        )
+
+        fun transfer(
+            sourceId: String,
+            targetId: String,
+            autoplay: Boolean,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_TRANSFER,
+            args = buildJsonObject {
+                put("source_queue_id", JsonPrimitive(sourceId))
+                put("target_queue_id", JsonPrimitive(targetId))
+                put("auto_play", JsonPrimitive(autoplay))
+            },
+        )
+
+        fun setRepeatMode(
+            queueId: String,
+            repeatMode: RepeatMode,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_REPEAT,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+                put("repeat_mode", JsonPrimitive(repeatMode.serverValue))
+            },
+        )
+
+        fun setShuffle(
+            queueId: String,
+            enabled: Boolean,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_SHUFFLE,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+                put("shuffle_enabled", JsonPrimitive(enabled))
+            },
+        )
+
+        /**
+         * Deliberately still the legacy command. `player_queues/dont_stop_the_music` is a
+         * live server-side alias that delegates to `set_autoplay`, so it works on old AND
+         * new servers, whereas `player_queues/autoplay` does not exist before 2.10. Do not
+         * "modernize" this to match the read path — that would break older servers.
+         */
+        fun setDontStopTheMusic(
+            queueId: String,
+            enabled: Boolean,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_DONT_STOP_THE_MUSIC,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+                put("dont_stop_the_music_enabled", JsonPrimitive(enabled))
+            },
+        )
+
+        /**
+         * Absolute setter, not a toggle: the server applies the value it is given.
+         * Unlike autoplay this command was never renamed, so there is no legacy alias
+         * to prefer — see `ServerQueue.crossfadeEnabled`.
+         */
+        fun setCrossfade(
+            queueId: String,
+            enabled: Boolean,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_CROSSFADE,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+                put("crossfade_enabled", JsonPrimitive(enabled))
+            },
+        )
+
+        fun setPlaybackSpeed(
+            queueId: String,
+            speed: Double,
+            queueItemId: String? = null,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_SET_PLAYBACK_SPEED,
+            args = buildJsonObject {
+                put("queue_id", JsonPrimitive(queueId))
+                put("speed", JsonPrimitive(speed))
+                queueItemId?.let { put("queue_item_id", JsonPrimitive(it)) }
+            },
+        )
+    }
+
+    data object Playlist {
+        fun get(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.get(APICommands.KIND_PLAYLISTS, itemId, providerInstanceIdOrDomain)
+
+        fun listLibrary(
+            favorite: Boolean? = null,
+            search: String? = null,
+            limit: Int = Int.MAX_VALUE,
+            offset: Int = 0,
+            orderBy: String? = null,
+            providers: List<String>? = null,
+            genres: List<Int>? = null,
+        ) = Request(
+            command = APICommands.MUSIC_PLAYLISTS_LIBRARY_ITEMS,
+            args = buildJsonObject {
+                favorite?.let { put("favorite", JsonPrimitive(it)) }
+                search?.let { put("search", JsonPrimitive(it)) }
+                put("limit", JsonPrimitive(limit))
+                put("offset", JsonPrimitive(offset))
+                orderBy?.let { put("order_by", JsonPrimitive(it)) }
+                putListFilters(providers, genres)
+            },
+        )
+
+        fun create(name: String) = Request(
+            command = APICommands.MUSIC_PLAYLISTS_CREATE_PLAYLIST,
+            args = buildJsonObject {
+                put("name", JsonPrimitive(name.trim()))
+            },
+        )
+
+        fun getTracks(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+            forceRefresh: Boolean? = null,
+            orderBy: String? = null,
+        ) = Request(
+            command = APICommands.MUSIC_PLAYLISTS_PLAYLIST_TRACKS,
+            args = buildJsonObject {
+                put("item_id", JsonPrimitive(itemId))
+                put("provider_instance_id_or_domain", JsonPrimitive(providerInstanceIdOrDomain))
+                forceRefresh?.let { put("force_refresh", JsonPrimitive(it)) }
+                orderBy?.let { put("order_by", JsonPrimitive(it)) }
+            },
+        )
+
+        fun addTracks(playlistId: String, trackUris: List<String>) = Request(
+            command = APICommands.MUSIC_PLAYLISTS_ADD_PLAYLIST_TRACKS,
+            args = buildJsonObject {
+                put("db_playlist_id", JsonPrimitive(playlistId))
+                put("uris", myJson.decodeFromString<JsonArray>(myJson.encodeToString(trackUris)))
+            },
+        )
+
+        fun removeTracks(playlistId: String, positions: List<Int>) = Request(
+            command = APICommands.MUSIC_PLAYLISTS_REMOVE_PLAYLIST_TRACKS,
+            args = buildJsonObject {
+                put("db_playlist_id", JsonPrimitive(playlistId))
+                put(
+                    "positions_to_remove",
+                    myJson.decodeFromString<JsonArray>(myJson.encodeToString(positions)),
+                )
+            },
+        )
+    }
+
+    data object Podcast {
+        fun get(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.get(APICommands.KIND_PODCASTS, itemId, providerInstanceIdOrDomain)
+
+        fun listLibrary(
+            favorite: Boolean? = null,
+            search: String? = null,
+            limit: Int = Int.MAX_VALUE,
+            offset: Int = 0,
+            orderBy: String? = null,
+            providers: List<String>? = null,
+            genres: List<Int>? = null,
+        ) = Request(
+            command = APICommands.MUSIC_PODCASTS_LIBRARY_ITEMS,
+            args = buildJsonObject {
+                favorite?.let { put("favorite", JsonPrimitive(it)) }
+                search?.let { put("search", JsonPrimitive(it)) }
+                put("limit", JsonPrimitive(limit))
+                put("offset", JsonPrimitive(offset))
+                orderBy?.let { put("order_by", JsonPrimitive(it)) }
+                putListFilters(providers, genres)
+            },
+        )
+
+        fun getEpisodes(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.subItems(
+            APICommands.MUSIC_PODCASTS_PODCAST_EPISODES,
+            itemId,
+            providerInstanceIdOrDomain,
+        )
+    }
+
+    data object RadioStation {
+        fun get(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.get(APICommands.KIND_RADIOS, itemId, providerInstanceIdOrDomain)
+
+        fun listLibrary(
+            favorite: Boolean? = null,
+            search: String? = null,
+            limit: Int = Int.MAX_VALUE,
+            offset: Int = 0,
+            orderBy: String? = null,
+            providers: List<String>? = null,
+            genres: List<Int>? = null,
+        ) = Request(
+            command = APICommands.MUSIC_RADIOS_LIBRARY_ITEMS,
+            args = buildJsonObject {
+                favorite?.let { put("favorite", JsonPrimitive(it)) }
+                search?.let { put("search", JsonPrimitive(it)) }
+                put("limit", JsonPrimitive(limit))
+                put("offset", JsonPrimitive(offset))
+                orderBy?.let { put("order_by", JsonPrimitive(it)) }
+                putListFilters(providers, genres)
+            },
+        )
+    }
+
+    data object Audiobook {
+        fun get(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.get(APICommands.KIND_AUDIOBOOKS, itemId, providerInstanceIdOrDomain)
+
+        fun listLibrary(
+            favorite: Boolean? = null,
+            search: String? = null,
+            limit: Int = Int.MAX_VALUE,
+            offset: Int = 0,
+            orderBy: String? = null,
+            providers: List<String>? = null,
+            genres: List<Int>? = null,
+        ) = Request(
+            command = APICommands.MUSIC_AUDIOBOOKS_LIBRARY_ITEMS,
+            args = buildJsonObject {
+                favorite?.let { put("favorite", JsonPrimitive(it)) }
+                search?.let { put("search", JsonPrimitive(it)) }
+                put("limit", JsonPrimitive(limit))
+                put("offset", JsonPrimitive(offset))
+                orderBy?.let { put("order_by", JsonPrimitive(it)) }
+                putListFilters(providers, genres)
+            },
+        )
+    }
+
+    data object Genre {
+        fun get(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.get(APICommands.KIND_GENRES, itemId, providerInstanceIdOrDomain)
+
+        fun listLibrary(
+            favorite: Boolean? = null,
+            search: String? = null,
+            limit: Int = Int.MAX_VALUE,
+            offset: Int = 0,
+            orderBy: String? = null,
+            providers: List<String>? = null,
+            hideEmpty: Boolean? = null,
+            mediaType: String? = null,
+        ) = Request(
+            command = APICommands.MUSIC_GENRES_LIBRARY_ITEMS,
+            args = buildJsonObject {
+                favorite?.let { put("favorite", JsonPrimitive(it)) }
+                search?.let { put("search", JsonPrimitive(it)) }
+                put("limit", JsonPrimitive(limit))
+                put("offset", JsonPrimitive(offset))
+                orderBy?.let { put("order_by", JsonPrimitive(it)) }
+                putListFilters(providers, null)
+                hideEmpty?.let { put("hide_empty", JsonPrimitive(it)) }
+                mediaType?.let { put("media_type", JsonPrimitive(it)) }
+            },
+        )
+
+        fun overview(
+            itemId: String,
+            providerInstanceIdOrDomain: String? = null,
+            limit: Int = 25,
+        ) = Request(
+            command = APICommands.MUSIC_GENRES_OVERVIEW,
+            args = buildJsonObject {
+                put("item_id", JsonPrimitive(itemId))
+                providerInstanceIdOrDomain?.let {
+                    put("provider_instance_id_or_domain", JsonPrimitive(it))
+                }
+                put("limit", JsonPrimitive(limit))
+            },
+        )
+    }
+
+    data object Artist {
+        fun get(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.get(APICommands.KIND_ARTISTS, itemId, providerInstanceIdOrDomain)
+
+        fun listLibrary(
+            favorite: Boolean? = null,
+            search: String? = null,
+            limit: Int = Int.MAX_VALUE,
+            offset: Int = 0,
+            orderBy: String? = null,
+            albumArtistsOnly: Boolean = false,
+            providers: List<String>? = null,
+            genres: List<Int>? = null,
+        ) = Request(
+            command = APICommands.MUSIC_ARTISTS_LIBRARY_ITEMS,
+            args = buildJsonObject {
+                favorite?.let { put("favorite", JsonPrimitive(it)) }
+                search?.let { put("search", JsonPrimitive(it)) }
+                put("limit", JsonPrimitive(limit))
+                put("offset", JsonPrimitive(offset))
+                orderBy?.let { put("order_by", JsonPrimitive(it)) }
+                put("album_artists_only", JsonPrimitive(albumArtistsOnly))
+                putListFilters(providers, genres)
+            },
+        )
+
+        fun getAlbums(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.subItems(
+            APICommands.MUSIC_ARTISTS_ARTIST_ALBUMS,
+            itemId,
+            providerInstanceIdOrDomain,
+        )
+
+        fun getTracks(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.subItems(
+            APICommands.MUSIC_ARTISTS_ARTIST_TRACKS,
+            itemId,
+            providerInstanceIdOrDomain,
+        )
+
+        fun getTopAlbums(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.subItems(
+            APICommands.MUSIC_ARTISTS_TOP_ALBUMS,
+            itemId,
+            providerInstanceIdOrDomain,
+        )
+
+        fun getTopTracks(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.subItems(
+            APICommands.MUSIC_ARTISTS_TOP_TRACKS,
+            itemId,
+            providerInstanceIdOrDomain,
+        )
+
+        fun getSimilarArtists(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+            limit: Int = 15,
+        ) = Library.subItems(
+            APICommands.MUSIC_ARTISTS_SIMILAR_ARTISTS,
+            itemId,
+            providerInstanceIdOrDomain,
+            limit = limit,
+        )
+    }
+
+    data object Album {
+        fun get(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.get(APICommands.KIND_ALBUMS, itemId, providerInstanceIdOrDomain)
+
+        fun listLibrary(
+            favorite: Boolean? = null,
+            search: String? = null,
+            limit: Int = Int.MAX_VALUE,
+            offset: Int = 0,
+            orderBy: String? = null,
+            albumTypes: List<String>? = null,
+            providers: List<String>? = null,
+            genres: List<Int>? = null,
+        ) = Request(
+            command = APICommands.MUSIC_ALBUMS_LIBRARY_ITEMS,
+            args = buildJsonObject {
+                favorite?.let { put("favorite", JsonPrimitive(it)) }
+                search?.let { put("search", JsonPrimitive(it)) }
+                put("limit", JsonPrimitive(limit))
+                put("offset", JsonPrimitive(offset))
+                orderBy?.let { put("order_by", JsonPrimitive(it)) }
+                albumTypes?.takeIf { it.isNotEmpty() }
+                    ?.let { types -> put("album_types", JsonArray(types.map { JsonPrimitive(it) })) }
+                putListFilters(providers, genres)
+            },
+        )
+
+        fun getTracks(
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Library.subItems(
+            APICommands.MUSIC_ALBUMS_ALBUM_TRACKS,
+            itemId,
+            providerInstanceIdOrDomain,
+        )
+    }
+
+    data object Track {
+        fun list(
+            favorite: Boolean? = null,
+            search: String? = null,
+            limit: Int = Int.MAX_VALUE,
+            offset: Int = 0,
+            orderBy: String? = null,
+            providers: List<String>? = null,
+            genres: List<Int>? = null,
+        ) = Request(
+            command = APICommands.MUSIC_TRACKS_LIBRARY_ITEMS,
+            args = buildJsonObject {
+                favorite?.let { put("favorite", JsonPrimitive(it)) }
+                search?.let { put("search", JsonPrimitive(it)) }
+                put("limit", JsonPrimitive(limit))
+                put("offset", JsonPrimitive(offset))
+                orderBy?.let { put("order_by", JsonPrimitive(it)) }
+                putListFilters(providers, genres)
+            },
+        )
+    }
+
+    data object Browse {
+        fun atPath(path: String?) = Request(
+            command = APICommands.MUSIC_BROWSE,
+            args = buildJsonObject {
+                path?.let { put("path", JsonPrimitive(it)) }
+            },
+        )
+    }
+
+    data object Metadata {
+        fun getTrackLyrics(track: TrackItem) = Request(
+            command = APICommands.METADATA_GET_TRACK_LYRICS,
+            args = buildJsonObject {
+                put("track", track.toLyricsRequestArg())
+            },
+        )
+    }
+
+    data object Library {
+        internal fun get(
+            kind: String,
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+        ) = Request(
+            command = APICommands.musicGet(kind),
+            args = buildJsonObject {
+                put("item_id", JsonPrimitive(itemId))
+                put("provider_instance_id_or_domain", JsonPrimitive(providerInstanceIdOrDomain))
+            },
+        )
+
+        fun add(
+            itemUri: String,
+        ) = Request(
+            command = APICommands.MUSIC_LIBRARY_ADD_ITEM,
+            args = buildJsonObject {
+                put("item", JsonPrimitive(itemUri))
+            },
+        )
+
+        fun remove(
+            itemId: String,
+            mediaType: MediaType,
+        ) = Request(
+            command = APICommands.MUSIC_LIBRARY_REMOVE_ITEM,
+            args = buildJsonObject {
+                put("library_item_id", JsonPrimitive(itemId))
+                put("media_type", JsonPrimitive(mediaType.serverValue))
+            },
+        )
+
+        fun play(
+            media: List<String>,
+            queueOrPlayerId: String,
+            option: QueueOption,
+            endlessMixMode: Boolean,
+            startItem: String? = null,
+        ) = Request(
+            command = APICommands.PLAYER_QUEUES_PLAY_MEDIA,
+            args = buildJsonObject {
+                put("media", JsonArray(media.map { JsonPrimitive(it) }))
+                put("option", JsonPrimitive(option.serverValue))
+                put("radio_mode", JsonPrimitive(endlessMixMode))
+                put("queue_id", JsonPrimitive(queueOrPlayerId))
+                startItem?.let { put("start_item", JsonPrimitive(it)) }
+            },
+        )
+
+        fun addFavorite(
+            itemUri: String,
+        ) = Request(
+            command = APICommands.MUSIC_FAVORITES_ADD_ITEM,
+            args = buildJsonObject {
+                put("item", JsonPrimitive(itemUri))
+            },
+        )
+
+        fun removeFavorite(
+            itemId: String,
+            mediaType: MediaType,
+        ) = Request(
+            command = APICommands.MUSIC_FAVORITES_REMOVE_ITEM,
+            args = buildJsonObject {
+                put("library_item_id", JsonPrimitive(itemId))
+                put("media_type", JsonPrimitive(mediaType.serverValue))
+            },
+        )
+
+        fun markPlayed(
+            item: MarkableItem,
+        ) = Request(
+            command = APICommands.MUSIC_MARK_PLAYED,
+            args = buildJsonObject {
+                put("media_item", item.toMarkMediaItem())
+            },
+        )
+
+        fun markUnplayed(
+            item: MarkableItem,
+        ) = Request(
+            command = APICommands.MUSIC_MARK_UNPLAYED,
+            args = buildJsonObject {
+                put("media_item", item.toMarkMediaItem())
+            },
+        )
+
+        fun search(
+            query: String,
+            mediaTypes: List<MediaType>,
+            limit: Int = 20,
+            libraryOnly: Boolean,
+        ) = Request(
+            command = APICommands.MUSIC_SEARCH,
+            args = buildJsonObject {
+                put("search_query", JsonPrimitive(query.replace("-", " ")))
+                put(
+                    "media_types",
+                    JsonArray(mediaTypes.map { JsonPrimitive(it.serverValue) }),
+                )
+                put("limit", JsonPrimitive(limit))
+                put("library_only", JsonPrimitive(libraryOnly))
+            },
+        )
+
+        fun recommendations() = Request(command = APICommands.MUSIC_RECOMMENDATIONS)
+
+        /**
+         * Items of a single recommendation row. Only exists on servers that
+         * return [recommendations] rows without embedded items.
+         */
+        fun recommendationItems(provider: String, itemId: String) = Request(
+            command = APICommands.MUSIC_RECOMMENDATIONS_ITEMS,
+            args = buildJsonObject {
+                put("provider", JsonPrimitive(provider))
+                put("item_id", JsonPrimitive(itemId))
+            },
+        )
+
+        fun providersManifests() = Request(command = APICommands.PROVIDERS_MANIFESTS)
+
+        /** Loaded provider instances (music/player/…); filter client-side by type. */
+        fun providers() = Request(command = APICommands.PROVIDERS)
+
+        internal fun subItems(
+            command: String,
+            itemId: String,
+            providerInstanceIdOrDomain: String,
+            limit: Int? = null,
+        ) = Request(
+            command = command,
+            args = buildJsonObject {
+                put("item_id", JsonPrimitive(itemId))
+                put("provider_instance_id_or_domain", JsonPrimitive(providerInstanceIdOrDomain))
+                limit?.let { put("limit", JsonPrimitive(it)) }
+            },
+        )
+    }
+
+    data object Auth {
+        fun providers() = Request(command = APICommands.AUTH_PROVIDERS)
+
+        fun authorizationUrl(providerId: String, returnUrl: String? = null) = Request(
+            command = APICommands.AUTH_AUTHORIZATION_URL,
+            args = buildJsonObject {
+                put("provider_id", JsonPrimitive(providerId))
+                returnUrl?.let { put("return_url", JsonPrimitive(it)) }
+            },
+        )
+
+        fun login(username: String, password: String, deviceName: String) = Request(
+            command = APICommands.AUTH_LOGIN,
+            args = buildJsonObject {
+                put("username", JsonPrimitive(username))
+                put("password", JsonPrimitive(password))
+                put("device_name", JsonPrimitive(deviceName))
+            },
+        )
+
+        fun logout() = Request(command = APICommands.AUTH_LOGOUT)
+
+        fun authorize(
+            token: String,
+            deviceName: String,
+            locale: String? = null,
+        ) = Request(
+            command = APICommands.AUTH,
+            args = buildJsonObject {
+                put("token", JsonPrimitive(token))
+                put("device_name", JsonPrimitive(deviceName))
+                locale?.let { put("locale", JsonPrimitive(it)) }
+            },
+        )
+    }
+
+    data object Dsp {
+        fun getPlayerConfig(playerId: String) = Request(
+            command = APICommands.CONFIG_PLAYERS_DSP_GET,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+            },
+        )
+
+        fun savePlayerConfig(playerId: String, config: DspConfig) = Request(
+            command = APICommands.CONFIG_PLAYERS_DSP_SAVE,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+                put("config", myJson.encodeToJsonElement(DspConfig.serializer(), config))
+            },
+        )
+
+        fun applyPreset(playerId: String, presetId: String) = Request(
+            command = APICommands.CONFIG_PLAYERS_DSP_APPLY_PRESET,
+            args = buildJsonObject {
+                put("player_id", JsonPrimitive(playerId))
+                put("preset_id", JsonPrimitive(presetId))
+            },
+        )
+
+        fun getPresets() = Request(command = APICommands.CONFIG_DSP_PRESETS_GET)
+    }
+
+    /**
+     * The optional `ai_radio` plugin provider. Every one of these fails on a server without
+     * the plugin, so gate the call sites on the availability flow rather than calling blind.
+     */
+    data object AiRadio {
+        fun stations() = Request(command = APICommands.AI_RADIO_STATIONS_LIST)
+
+        /**
+         * Starts [stationId] on [playerId].
+         *
+         * The server resolves the override through `players.get_player`, so this must be a
+         * PLAYER id — not the queue id that most other commands take.
+         */
+        fun start(stationId: String, playerId: String) = Request(
+            command = APICommands.AI_RADIO_START,
+            args = buildJsonObject {
+                put("station_id", JsonPrimitive(stationId))
+                put("player_id_override", JsonPrimitive(playerId))
+            },
+        )
+
+        /**
+         * Stops whatever run [stationId] currently has on air.
+         *
+         * Deliberately by station and not by session id. The server ignores `station_id`
+         * whenever a `session_id` is present, and a session id can only come from an earlier
+         * poll — by the time the user presses Stop that run may have ended on its own, and the
+         * stale id is answered with "Session X is not running (status=finished)". Asking by
+         * station instead lets the server pick the run that is actually live, and its "no
+         * active run found for station" is at least true when there is none.
+         *
+         * Safe because the provider caps concurrent runs at one, so a station has at most one.
+         */
+        fun stop(stationId: String) = Request(
+            command = APICommands.AI_RADIO_STOP,
+            args = buildJsonObject {
+                put("station_id", JsonPrimitive(stationId))
+            },
+        )
+
+        /** All sessions, newest first. The provider emits no events, so this is poll-only. */
+        fun status() = Request(command = APICommands.AI_RADIO_STATUS)
+    }
+}

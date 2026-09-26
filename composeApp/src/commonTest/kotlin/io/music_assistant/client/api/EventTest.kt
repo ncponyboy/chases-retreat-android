@@ -1,0 +1,236 @@
+package io.music_assistant.client.api
+
+import io.music_assistant.client.data.model.server.EventType
+import io.music_assistant.client.data.model.server.events.CoreStateUpdatedEvent
+import io.music_assistant.client.data.model.server.events.GenericEvent
+import io.music_assistant.client.data.model.server.events.PlayerRemovedEvent
+import io.music_assistant.client.data.model.server.events.PlayerUpdatedEvent
+import io.music_assistant.client.data.model.server.events.QueueAddedEvent
+import io.music_assistant.client.utils.myJson
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+/**
+ * Guards the contract of [Event.event]: event deserialization is the one
+ * place where *any* server-side schema drift reaches the app, because
+ * events are pushed over the websocket rather than pulled by an RPC we
+ * could defensively retry. An uncaught [SerializationException] here
+ * would bubble to the websocket message-collector coroutine and abort the
+ * process, so `event()` must:
+ *
+ *  - decode known event types normally,
+ *  - return `null` for unknown event types,
+ *  - return `null` when the payload shape for a known event type is wrong,
+ *  - return `null` when the envelope itself fails to parse (no `event`
+ *    field, non-string value, etc.) — including not throwing out of the
+ *    `Event` constructor.
+ */
+class EventTest {
+    private fun parse(raw: String): Event =
+        Event(Json.parseToJsonElement(raw) as JsonObject)
+
+    @Test
+    fun decodesKnownEvent() {
+        val raw = """{
+            "event": "player_removed",
+            "object_id": "pl1",
+            "data": null
+        }"""
+
+        val decoded = parse(raw).event()
+
+        assertNotNull(decoded)
+        assertTrue(decoded is PlayerRemovedEvent)
+        assertEquals("pl1", decoded.objectId)
+    }
+
+    @Test
+    fun decodesPlayerUpdatedEventWithMinimalServerPlayer() {
+        // The ServerPlayer inside PLAYER_UPDATED events carries only the
+        // fields the server feels like sending on that update; all
+        // non-identity fields fall back to defaults.
+        val raw = """{
+            "event": "player_updated",
+            "object_id": "pl1",
+            "data": {"player_id": "pl1"}
+        }"""
+
+        val decoded = parse(raw).event()
+
+        assertNotNull(decoded)
+        assertTrue(decoded is PlayerUpdatedEvent)
+        assertEquals("pl1", decoded.data.playerId)
+    }
+
+    @Test
+    fun decodesPlayerUpdatedEventWithUnknownPlayerType() {
+        // ServerPlayer.type is a raw `String?` so an unknown server-side
+        // variant carries through the decode untouched; the client-side
+        // PlayerFactory is what normalizes it to PlayerType.PLAYER.
+        val raw = """{
+            "event": "player_updated",
+            "object_id": "pl1",
+            "data": {"player_id": "pl1", "type": "some_new_server_type"}
+        }"""
+
+        val decoded = parse(raw).event()
+
+        assertNotNull(decoded)
+        assertTrue(decoded is PlayerUpdatedEvent)
+        assertEquals("some_new_server_type", decoded.data.type)
+    }
+
+    @Test
+    fun decodesQueueAddedEvent() {
+        // Real-shape payload (truncated from a connect-time CarPlay session
+        // capture). Required fields: queue_id (id), elapsed_time_last_updated.
+        // current_item is the field CarPlay's initial-Now-Playing decision
+        // hinges on, so it's pinned here.
+        val raw = """{
+            "event": "queue_added",
+            "object_id": "q1",
+            "data": {
+                "queue_id": "q1",
+                "active": true,
+                "display_name": "Djinni",
+                "available": true,
+                "items": 128,
+                "shuffle_enabled": false,
+                "repeat_mode": "off",
+                "dont_stop_the_music_enabled": false,
+                "current_index": 2,
+                "elapsed_time": 134.45,
+                "elapsed_time_last_updated": 1777422843.81,
+                "state": "idle",
+                "current_item": {
+                    "queue_id": "q1",
+                    "queue_item_id": "qi1",
+                    "name": "Alela Diane - About Farewell",
+                    "duration": 190,
+                    "sort_index": 2,
+                    "available": true
+                }
+            }
+        }"""
+
+        val decoded = parse(raw).event()
+
+        assertNotNull(decoded)
+        assertTrue(decoded is QueueAddedEvent)
+        assertEquals("q1", decoded.data.queueId)
+        assertNotNull(decoded.data.currentItem)
+        assertEquals("Alela Diane - About Farewell", decoded.data.currentItem.name)
+    }
+
+    @Test
+    fun returnsNullForUnknownEventType() {
+        val raw = """{"event": "something_the_client_doesnt_know_about"}"""
+
+        assertNull(parse(raw).event())
+    }
+
+    @Test
+    fun returnsNullWhenEnvelopeMissingEventField() {
+        // Envelope parse fails (`event` is required in GenericEvent). The
+        // constructor must swallow that and leave `type = null` rather than
+        // throwing at construction time.
+        val raw = """{"object_id": "pl1"}"""
+
+        assertNull(parse(raw).event())
+    }
+
+    @Test
+    fun returnsNullWhenPayloadShapeIsWrong() {
+        // Event type is valid, but `data` is a string where an object is
+        // expected — the shape mismatch must be contained, not thrown.
+        val raw = """{
+            "event": "player_updated",
+            "object_id": "pl1",
+            "data": "not an object"
+        }"""
+
+        assertNull(parse(raw).event())
+    }
+
+    @Test
+    fun decodesCoreStateUpdatedEvent() {
+        // `data` is the full `server/hello` payload plus a `status` (CoreState) field the
+        // client does not model yet — it must be dropped, not fail the decode.
+        val raw = """{
+            "event": "core_state_updated",
+            "object_id": null,
+            "data": {
+                "server_id": "srv1",
+                "server_version": "2.6.0",
+                "schema_version": 59,
+                "min_supported_schema_version": 40,
+                "name": "Music Assistant",
+                "internal_url": "http://ma.local:8095",
+                "external_url": "https://ma.example.com",
+                "has_remote_access": true,
+                "status": "running"
+            }
+        }"""
+
+        val decoded = parse(raw).event()
+
+        assertNotNull(decoded)
+        assertTrue(decoded is CoreStateUpdatedEvent)
+        assertEquals("srv1", decoded.data.serverId)
+        assertEquals(59, decoded.data.schemaVersion)
+        assertEquals("https://ma.example.com", decoded.data.externalUrl)
+        assertTrue(decoded.data.hasRemoteAccess)
+    }
+
+    @Test
+    fun returnsNullWhenCoreStateUpdatedPayloadHasNoServerId() {
+        // `server_id` is the only required ServerInfo field and the identity the merge guard
+        // keys on. Without it there is nothing to trust, so the event must be dropped quietly.
+        val raw = """{
+            "event": "core_state_updated",
+            "data": {"server_version": "2.6.0"}
+        }"""
+
+        assertNull(parse(raw).event())
+    }
+
+    @Test
+    fun returnsNullWhenCoreStateUpdatedPayloadIsNotAnObject() {
+        val raw = """{
+            "event": "core_state_updated",
+            "data": "not an object"
+        }"""
+
+        assertNull(parse(raw).event())
+    }
+
+    @Test
+    fun everyEventTypeDecodesFromItsWireValue() {
+        // The envelope's event kind must be resolved through the serializer, so
+        // a constant whose @SerialName differs from its Kotlin name (SHUTDOWN,
+        // ALL) still resolves. Round-trip through the same Json instance the
+        // decoder uses, so a future name/@SerialName divergence fails here.
+        EventType.entries.forEach { type ->
+            val wire = myJson.encodeToString(EventType.serializer(), type)
+            val decoded = myJson.decodeFromString<GenericEvent>("""{"event": $wire}""")
+
+            assertEquals(type, decoded.eventType, "wire value $wire")
+        }
+    }
+
+    @Test
+    fun resolvesApplicationShutdownWireValue() {
+        // Confirmed regression: SHUTDOWN is @SerialName("application_shutdown"),
+        // so constant-name matching resolved it to null.
+        val decoded = myJson.decodeFromString<GenericEvent>(
+            """{"event": "application_shutdown"}""",
+        )
+
+        assertEquals(EventType.SHUTDOWN, decoded.eventType)
+    }
+}

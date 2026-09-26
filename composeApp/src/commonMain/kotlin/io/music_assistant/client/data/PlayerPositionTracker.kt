@@ -1,0 +1,221 @@
+package io.music_assistant.client.data
+
+import io.music_assistant.client.utils.currentTimeMillis
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
+
+/**
+ * Single source of truth for "what elapsed-time is each queue at, right now".
+ *
+ * Server events (`QueueTimeUpdatedEvent`, `QueueAddedEvent`, ...) write
+ * anchors here. Play/pause transitions snapshot the interpolated position so
+ * the pause duration doesn't fold into the next forward step. Consumers
+ * (in-app slider, MediaSession writes for AA + notification, iOS NowPlaying,
+ * audiobook chapter logic) all read the same source — synchronously via
+ * [effectiveSec] or as a smoothly-ticking flow via [observe].
+ *
+ * No background tick: the cold [observe] flow ticks at 500 ms only while a
+ * collector is attached AND the queue is playing. Sync reads are O(1) map
+ * lookups — no allocations, no ipc.
+ */
+class PlayerPositionTracker {
+    /** Anchor data for a single queue. */
+    data class Anchor(
+        val elapsedSec: Double,
+        val wallMs: Long,
+        val isPlaying: Boolean,
+        val durationSec: Double?,
+        /**
+         * Media-seconds advanced per wall-second (1.0 = normal). Variable speed
+         * (audiobooks/podcasts) makes media-time run faster/slower than the wall
+         * clock; the server reports elapsed in media-time, so we must scale the
+         * interpolated delta to match, or the slider drifts then snaps each anchor.
+         */
+        val speed: Double = 1.0,
+        /** Hold the optimistic position until Sendspin confirms audio is flowing. */
+        val freezeReason: FreezeReason? = null,
+    ) {
+        /** Position right now: anchor + speed-scaled wall-time since anchor (capped at duration). */
+        fun effectiveNow(): Double {
+            if (!isPlaying || freezeReason != null) return elapsedSec
+            val advanced = elapsedSec + (currentTimeMillis() - wallMs) / 1000.0 * speed
+            return durationSec?.let { advanced.coerceAtMost(it) } ?: advanced
+        }
+    }
+
+    /**
+     * Optimistic anchors wait for [confirmPlaying], not server queue echoes: MA can
+     * report the seek target or next-track position before Sendspin has audio.
+     */
+    enum class FreezeReason { SEEK, TRACK_CHANGE }
+
+    private val anchors = MutableStateFlow<Map<String, Anchor>>(emptyMap())
+
+    /**
+     * Server-anchored update. Pass `isPlaying`/`durationSec` when known;
+     * `null` preserves the existing values (useful for `QueueTimeUpdatedEvent`
+     * which only carries the new elapsed value).
+     */
+    fun setAnchor(
+        queueId: String,
+        elapsedSec: Double,
+        isPlaying: Boolean? = null,
+        durationSec: Double? = null,
+        speed: Double? = null,
+    ) {
+        anchors.update { existing ->
+            val current = existing[queueId]
+            // Server anchors are noisy during handoff; Sendspin sync is the confirmation.
+            if (current?.freezeReason != null) return@update existing
+            existing + (
+                queueId to Anchor(
+                    elapsedSec = elapsedSec,
+                    wallMs = currentTimeMillis(),
+                    isPlaying = isPlaying ?: current?.isPlaying ?: false,
+                    durationSec = durationSec ?: current?.durationSec,
+                    speed = speed ?: current?.speed ?: 1.0,
+                    freezeReason = null,
+                )
+            )
+        }
+    }
+
+    /**
+     * Play/pause transition. Snapshots the current interpolated position as
+     * the new anchor so neither the slider nor MediaSession sees a jump:
+     * - Pausing: anchor advances to "where we were", isPlaying=false → static.
+     * - Resuming: same anchor, wallMs reset to now, isPlaying=true → forward.
+     */
+    fun setPlaying(queueId: String, isPlaying: Boolean) {
+        anchors.update { existing ->
+            val current = existing[queueId] ?: return@update existing
+            if (current.isPlaying == isPlaying) return@update existing
+            existing + (
+                queueId to current.copy(
+                    elapsedSec = current.effectiveNow(),
+                    wallMs = currentTimeMillis(),
+                    isPlaying = isPlaying,
+                )
+            )
+        }
+    }
+
+    /** User-dropped seek anchor; server echoes do not release the freeze. */
+    fun setOptimisticSeek(
+        queueId: String,
+        elapsedSec: Double,
+        durationSec: Double? = null,
+        speed: Double? = null,
+    ) {
+        anchors.update { existing ->
+            val current = existing[queueId]
+            existing + (
+                queueId to Anchor(
+                    elapsedSec = elapsedSec,
+                    wallMs = currentTimeMillis(),
+                    isPlaying = current?.isPlaying ?: false,
+                    durationSec = durationSec ?: current?.durationSec,
+                    speed = speed ?: current?.speed ?: 1.0,
+                    freezeReason = FreezeReason.SEEK,
+                )
+            )
+        }
+    }
+
+    /** Next/Previous boundary; wait for new-stream sync before ticking again. */
+    fun setOptimisticTrackChange(
+        queueId: String,
+        elapsedSec: Double,
+        durationSec: Double? = null,
+        speed: Double? = null,
+    ) {
+        anchors.update { existing ->
+            val current = existing[queueId]
+            existing + (
+                queueId to Anchor(
+                    elapsedSec = elapsedSec,
+                    wallMs = currentTimeMillis(),
+                    isPlaying = current?.isPlaying ?: false,
+                    durationSec = durationSec ?: current?.durationSec,
+                    speed = speed ?: current?.speed ?: 1.0,
+                    freezeReason = FreezeReason.TRACK_CHANGE,
+                )
+            )
+        }
+    }
+
+    /** Release an optimistic freeze once Sendspin reports synchronized audio. */
+    fun confirmPlaying(queueId: String) {
+        anchors.update { existing ->
+            val current = existing[queueId] ?: return@update existing
+            if (current.freezeReason == null) return@update existing
+            existing + (
+                queueId to current.copy(
+                    elapsedSec = current.effectiveNow(),
+                    wallMs = currentTimeMillis(),
+                    isPlaying = true,
+                    freezeReason = null,
+                )
+            )
+        }
+    }
+
+    /** O(1) read of latest interpolated position. */
+    fun effectiveSec(queueId: String): Double? = anchors.value[queueId]?.effectiveNow()
+
+    /** True while an optimistic seek or track-change is waiting for confirmation. */
+    fun isFrozenUntilConfirmed(queueId: String): Boolean =
+        anchors.value[queueId]?.freezeReason != null
+
+    /**
+     * Cold flow of interpolated position. Emits immediately on subscription,
+     * then either:
+     * - re-emits on every anchor change (track flip, seek, server scrub,
+     *   pause/resume), AND
+     * - ticks at 500 ms while the queue is playing.
+     *
+     * Stops ticking when the queue is paused (waits for the next anchor
+     * change). Cancels cleanly when the collector unsubscribes.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observe(queueId: String): Flow<Double> = anchors
+        .map { it[queueId] }
+        .distinctUntilChanged()
+        .flatMapLatest { anchor ->
+            if (anchor == null) {
+                flowOf(0.0)
+            } else {
+                flow {
+                    while (currentCoroutineContext().isActive) {
+                        emit(anchor.effectiveNow())
+                        if (!anchor.isPlaying || anchor.freezeReason != null) break
+                        delay(TICK_MS)
+                    }
+                }
+            }
+        }
+
+    /** Drop a queue's anchor (e.g., when the queue is removed). */
+    fun remove(queueId: String) {
+        anchors.update { it - queueId }
+    }
+
+    /** Clear all anchors (disconnect / reset). */
+    fun clear() {
+        anchors.update { emptyMap() }
+    }
+
+    private companion object {
+        const val TICK_MS = 500L
+    }
+}
