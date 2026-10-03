@@ -215,6 +215,7 @@
   <string name="media_unknown_track">Unknown Track</string>
   <string name="menu_default_label">Default</string>
   <string name="nav_browse">Browse</string>
+  <string name="nav_family">Family</string>
   <string name="nav_home">Home</string>
   <string name="nav_house_manual">House Manual</string>
   <string name="nav_library">Library</string>

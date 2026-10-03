@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MenuBook
@@ -53,6 +54,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import musicassistantclient.composeapp.generated.resources.Res
+import musicassistantclient.composeapp.generated.resources.nav_family
 import musicassistantclient.composeapp.generated.resources.nav_house_manual
 import musicassistantclient.composeapp.generated.resources.nav_local_businesses
 import musicassistantclient.composeapp.generated.resources.nav_music
@@ -64,8 +66,8 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * The app's top-level shell: a 6-tab bar (Welcome / Music / Local Businesses / Things to Do /
- * House Manual / Photo Share). Welcome is the default landing tab — see [AppTab] — with Music
+ * The app's top-level shell: a 7-tab bar (Welcome / Music / Local Businesses / Things to Do /
+ * House Manual / Photo Share / Family). Welcome is the default landing tab — see [AppTab] — with Music
  * Assistant's own Home/Library/Search navigation nested one level down inside the Music tab
  * (see [MusicSection]).
  *
@@ -99,7 +101,7 @@ fun MainNavigationRoot(
         rememberAppTabBackStack(AppTab.ThingsToDo),
         rememberAppTabBackStack(AppTab.HouseManual),
         rememberAppTabBackStack(AppTab.PhotoShare),
-        // Not in the nav bar: reached from the Welcome tab's "Family" card (see FAMILY_TAB_INDEX).
+        // Also reachable from the Welcome tab's "Family Calendar" card (see FAMILY_TAB_INDEX).
         rememberAppTabBackStack(AppTab.FamilyCalendar),
     )
     val multiBackStack = remember { MultiBackStack(backStacks) }
@@ -174,6 +176,11 @@ fun MainNavigationRoot(
             icon = Icons.Default.PhotoCamera,
             label = stringResource(Res.string.nav_photo_share),
         ),
+        multiBackStack.createNavigationItem(
+            backStack = FAMILY_TAB_INDEX,
+            icon = Icons.Default.CalendarMonth,
+            label = stringResource(Res.string.nav_family),
+        ),
         // Locked build: no separate Settings entry — there's nothing for a guest to
         // configure. See LockedStatusScreen for the only connection-status UI this build has,
         // now scoped to the Music tab (MusicTabGate) rather than a full-screen destination.
@@ -218,7 +225,7 @@ fun MainNavigationRoot(
  * multiple deep-link branches, so named rather than repeating the literal. */
 private const val MUSIC_TAB_INDEX = 1
 
-/** Index of [AppTab.FamilyCalendar] — a tab with no nav-bar item, opened from the Welcome tab. */
+/** Index of [AppTab.FamilyCalendar] — the last tab in the bar; also opened from the Welcome tab. */
 private const val FAMILY_TAB_INDEX = 6
 
 @Composable
@@ -337,7 +344,7 @@ private fun MusicTabGate(
     }
 }
 
-/** The app's 6 top-level tabs. Each is a single leaf screen except [Music], which nests its
+/** The app's 7 top-level tabs. Each is a single leaf screen except [Music], which nests its
  * own internal navigation (see [MainNav] / [MusicSection]). */
 private sealed interface AppTab : NavKey {
     @Serializable

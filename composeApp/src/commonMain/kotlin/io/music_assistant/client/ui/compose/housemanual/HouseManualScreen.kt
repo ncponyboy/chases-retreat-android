@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.WarningAmber
@@ -20,80 +19,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.music_assistant.client.data.repository.HouseManualItem
+import io.music_assistant.client.data.repository.HouseManualSection
+import org.koin.compose.viewmodel.koinViewModel
 import io.music_assistant.client.utils.isAndroidPlatform
-
-/** One line within a [HouseManualSection]. [emphasized] calls out something safety-critical. */
-data class HouseManualItem(
-    val text: String,
-    val emphasized: Boolean = false,
-)
-
-data class HouseManualSection(
-    val title: String,
-    val items: List<HouseManualItem>,
-)
-
-/**
- * Static, hand-curated for the property. Update this list directly to add, remove, or re-order
- * sections. The one live element on this screen — [HotTubStatusCard] — is injected separately,
- * right after the "Hot Tub" section below, rather than living in this data.
- */
-private val houseManualSections = listOf(
-    HouseManualSection(
-        title = "Hot Tub",
-        items = listOf(
-            HouseManualItem(
-                "Chemicals are under the hot tub stairs. Make sure there are bromide tablets " +
-                    "in the floater.",
-            ),
-        ),
-    ),
-    HouseManualSection(
-        title = "Hammocks",
-        items = listOf(
-            HouseManualItem("In the truck on the main level."),
-        ),
-    ),
-    HouseManualSection(
-        title = "River Tubes",
-        items = listOf(
-            HouseManualItem("In the HVAC room, to the right of the washer and dryer in the basement."),
-        ),
-    ),
-    HouseManualSection(
-        title = "Pool Room Music",
-        items = listOf(
-            HouseManualItem("Use the tablet, or the Music tab in this app."),
-            HouseManualItem("The basement tablet can control everything."),
-            HouseManualItem("Connect to the Denon directly if you want to use your own music service."),
-        ),
-    ),
-    HouseManualSection(
-        title = "Cleaning",
-        items = listOf(
-            HouseManualItem("There's a vacuum on every floor, and cleaning supplies located throughout the house."),
-        ),
-    ),
-    HouseManualSection(
-        title = "Before You Leave",
-        items = listOf(
-            HouseManualItem("Throw out any perishable foods."),
-            HouseManualItem("Wash dirty sheets."),
-            HouseManualItem("Put the house back the way you found it."),
-            HouseManualItem("Close the blinds."),
-            HouseManualItem(
-                "VERY IMPORTANT: physically check that every exterior door on every level " +
-                    "is dead-bolted shut.",
-                emphasized = true,
-            ),
-        ),
-    ),
-)
 
 private data class OtherApp(val name: String, val iosUrl: String, val androidUrl: String)
 
@@ -113,8 +50,14 @@ private val otherApps = listOf(
 )
 
 @Composable
-fun HouseManualScreen(contentPadding: PaddingValues = PaddingValues()) {
+fun HouseManualScreen(
+    contentPadding: PaddingValues = PaddingValues(),
+    viewModel: HouseManualViewModel = koinViewModel(),
+) {
     val uriHandler = LocalUriHandler.current
+    val sections by viewModel.sections.collectAsStateWithLifecycle()
+    // Re-check for edits every time the guest opens this tab.
+    LaunchedEffect(Unit) { viewModel.refresh() }
     // contentPadding (from the outer tab bar) never carries a top value — it only reserves
     // room for the bottom bar / rail — so the status bar inset has to be added separately,
     // or this screen's title renders underneath the clock/battery icons.
@@ -129,10 +72,9 @@ fun HouseManualScreen(contentPadding: PaddingValues = PaddingValues()) {
         ),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        item { HouseManualSectionCard(houseManualSections.first()) }
-        item { HotTubStatusCard() }
-        items(houseManualSections.drop(1)) { section ->
-            HouseManualSectionCard(section)
+        sections.forEach { section ->
+            item { HouseManualSectionCard(section) }
+            if (section.hotTubStatus) item { HotTubStatusCard() }
         }
         item { OtherAppsFooter(onOpenApp = { app -> uriHandler.openUri(if (isAndroidPlatform) app.androidUrl else app.iosUrl) }) }
     }

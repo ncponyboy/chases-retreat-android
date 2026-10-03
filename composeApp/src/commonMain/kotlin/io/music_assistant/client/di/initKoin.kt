@@ -29,7 +29,7 @@ fun initKoin(
     Logger.setLogWriters(listOf(InMemoryLogWriter) + platformLogWriters())
     startKoin {
         config?.invoke(this)
-        modules(sharedModule(), webrtcModule, homeAssistantModule, stargazingModule, *platformModules)
+        modules(sharedModule(), webrtcModule, homeAssistantModule, stargazingModule, houseManualModule, *platformModules)
     }
     val webrtcFetcherFactory = WebRTCImageFetcher.Factory(KoinPlatform.getKoin().get<ServiceClient>())
     SingletonImageLoader.setSafe { context -> buildAppImageLoader(context, webrtcFetcherFactory) }
