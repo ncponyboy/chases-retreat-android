@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chase's Retreat — Android</title>
+<title>Chase's Retreat — Get the app</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -57,6 +57,29 @@
     border-radius: 999px;
     margin-bottom: 8px;
   }
+  .appstore {
+    display: inline-block;
+    background: #000000;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1.05rem;
+    text-decoration: none;
+    padding: 16px 32px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .appstore { background: #ffffff; color: #000000; }
+  }
+  .qr {
+    display: block;
+    width: 160px;
+    height: 160px;
+    margin: 4px auto 8px;
+    background: #ffffff;
+    padding: 8px;
+    border-radius: 12px;
+  }
   .version {
     color: var(--muted);
     font-size: 0.85rem;
@@ -85,13 +108,18 @@
 <body>
 <main>
   <h1>Chase's Retreat</h1>
-  <p class="sub">Guest app for Android</p>
+  <p class="sub">Guest app for iPhone and Android</p>
+
+  <a class="appstore" href="https://apps.apple.com/us/app/chases-retreat/id6814570333">Download on the App Store</a>
+  <p class="version">For iPhone &middot; on the App Store</p>
+  <img class="qr" src="app-store-qr.svg" alt="QR code for Chase's Retreat on the App Store">
+  <p class="version">On a computer? Scan this with your iPhone camera.</p>
 
   <a class="download" href="chases-retreat-1.2.apk">Download for Android</a>
   <p class="version">Version 1.2 &middot; direct install, not on the Play Store</p>
 
   <div class="card">
-    <h2>Install instructions</h2>
+    <h2>Android install instructions</h2>
     <ol>
       <li>Tap the download button above.</li>
       <li>When Android warns about installing from an unknown source, tap <strong>Settings</strong>, then allow installs from this app (usually Chrome or Files).</li>
@@ -100,8 +128,8 @@
   </div>
 
   <div class="card">
-    <h2>Why isn't this on the Play Store?</h2>
-    <p style="margin:0">This app is built only for guests of Chase's Retreat in Piney Creek, NC — it's not meant for the general public, so it's distributed directly instead of through a public store listing.</p>
+    <h2>Why isn't the Android app on the Play Store?</h2>
+    <p style="margin:0">This app is built only for guests of Chase's Retreat in Piney Creek, NC. On iPhone it's on the App Store; on Android it's shared directly here instead of through a public store listing.</p>
   </div>
 </main>
 </body>
