@@ -5,6 +5,8 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import io.music_assistant.client.data.repository.FamilyCalendarRepository
 import io.music_assistant.client.data.repository.HotTubRepository
+import io.music_assistant.client.data.repository.LightsRepository
+import io.music_assistant.client.ui.compose.lights.LightsViewModel
 import io.music_assistant.client.ui.compose.family.FamilyCalendarViewModel
 import org.koin.core.module.dsl.viewModelOf
 import io.music_assistant.client.utils.createPlatformHttpClient
@@ -42,4 +44,18 @@ val homeAssistantModule = module {
     }
     single { FamilyCalendarRepository(get(named("familyCalendarHttpClient")), get(named(SECRETS))) }
     viewModelOf(::FamilyCalendarViewModel)
+
+    // Lights tab: the house's local-only webhooks (see LightsConfig). Short timeouts, since a
+    // phone that isn't on the house Wi-Fi should hear "couldn't reach the house" quickly.
+    single(named("lightsHttpClient")) {
+        createPlatformHttpClient {
+            expectSuccess = true
+            install(HttpTimeout) {
+                requestTimeoutMillis = 8_000
+                connectTimeoutMillis = 5_000
+            }
+        }
+    }
+    single { LightsRepository(get(named("lightsHttpClient"))) }
+    viewModelOf(::LightsViewModel)
 }

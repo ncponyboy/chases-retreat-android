@@ -7,3 +7,9 @@ chasesretreat.server.port=8095
 chasesretreat.server.tls=false
 chasesretreat.server.username=Guest
 chasesretreat.server.password=change-me
+
+# Lights tab: the house's Home Assistant on the LAN and its two local-only webhooks
+# ("Pool Room Lights - Local webhook" and "Panel - Local mode webhook" automations).
+chasesretreat.ha.url=http://192.168.x.x:8123
+chasesretreat.ha.poolLightsWebhook=pool-lights-xxxx
+chasesretreat.ha.panelWebhook=panel-mode-xxxx

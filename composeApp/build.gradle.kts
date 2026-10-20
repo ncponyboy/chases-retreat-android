@@ -34,11 +34,18 @@ val generateBrandSecrets = tasks.register("generateBrandSecrets") {
     val tls = brandLocalProps.getProperty("chasesretreat.server.tls", "false").toBoolean()
     val username = brandLocalProps.getProperty("chasesretreat.server.username", "")
     val password = brandLocalProps.getProperty("chasesretreat.server.password", "")
+    // Lights tab: the house's Home Assistant on the LAN + its two local-only webhook ids.
+    val haUrl = brandLocalProps.getProperty("chasesretreat.ha.url", "")
+    val poolLightsWebhook = brandLocalProps.getProperty("chasesretreat.ha.poolLightsWebhook", "")
+    val panelWebhook = brandLocalProps.getProperty("chasesretreat.ha.panelWebhook", "")
     inputs.property("host", host)
     inputs.property("port", port)
     inputs.property("tls", tls)
     inputs.property("username", username)
     inputs.property("password", password)
+    inputs.property("haUrl", haUrl)
+    inputs.property("poolLightsWebhook", poolLightsWebhook)
+    inputs.property("panelWebhook", panelWebhook)
     outputs.dir(brandSecretsDir)
     doLast {
         fun esc(v: String) = v.replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
@@ -61,6 +68,9 @@ val generateBrandSecrets = tasks.register("generateBrandSecrets") {
                 const val SERVER_IS_TLS = $tls
                 const val SERVER_USERNAME = "${esc(username)}"
                 const val SERVER_PASSWORD = "${esc(password)}"
+                const val HA_LOCAL_URL = "${esc(haUrl)}"
+                const val POOL_LIGHTS_WEBHOOK_ID = "${esc(poolLightsWebhook)}"
+                const val PANEL_WEBHOOK_ID = "${esc(panelWebhook)}"
             }
             """.trimIndent() + "\n",
         )

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Hiking
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -53,6 +54,7 @@ private data class WelcomeLink(
 fun WelcomeScreen(
     contentPadding: PaddingValues = PaddingValues(),
     onOpenMusic: () -> Unit = {},
+    onOpenLights: () -> Unit = {},
     onOpenLocalBusinesses: () -> Unit = {},
     onOpenThingsToDo: () -> Unit = {},
     onOpenHouseManual: () -> Unit = {},
@@ -65,6 +67,12 @@ fun WelcomeScreen(
             description = "Browse and play music throughout the house.",
             icon = Icons.Filled.MusicNote,
             onClick = onOpenMusic,
+        ),
+        WelcomeLink(
+            label = "Lights",
+            description = "Pool room lights and the LED sign — party mode, colors, brightness.",
+            icon = Icons.Filled.Lightbulb,
+            onClick = onOpenLights,
         ),
         WelcomeLink(
             label = "House Manual",

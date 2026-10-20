@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -39,6 +40,7 @@ import io.music_assistant.client.ui.compose.home.players.DspSettingsViewModel
 import io.music_assistant.client.ui.compose.family.FamilyCalendarScreen
 import io.music_assistant.client.ui.compose.housemanual.HouseManualScreen
 import io.music_assistant.client.ui.compose.item.ViewModeViewModel
+import io.music_assistant.client.ui.compose.lights.LightsScreen
 import io.music_assistant.client.ui.compose.localbusinesses.LocalBusinessesScreen
 import io.music_assistant.client.ui.compose.locked.LockedStatusScreen
 import io.music_assistant.client.ui.compose.nav.AdaptiveNavigationBarLayout
@@ -58,6 +60,7 @@ import kotlinx.serialization.modules.polymorphic
 import musicassistantclient.composeapp.generated.resources.Res
 import musicassistantclient.composeapp.generated.resources.nav_family
 import musicassistantclient.composeapp.generated.resources.nav_house_manual
+import musicassistantclient.composeapp.generated.resources.nav_lights
 import musicassistantclient.composeapp.generated.resources.nav_local_businesses
 import musicassistantclient.composeapp.generated.resources.nav_music
 import musicassistantclient.composeapp.generated.resources.nav_photo_share
@@ -68,8 +71,8 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * The app's top-level shell: a 7-tab bar (Welcome / Music / Local Businesses / Things to Do /
- * House Manual / Photo Share / Family). Welcome is the default landing tab — see [AppTab] — with Music
+ * The app's top-level shell: an 8-tab bar (Welcome / Music / Lights / Local Businesses / Things to
+ * Do / House Manual / Photo Share / Family). Welcome is the default landing tab — see [AppTab] — with Music
  * Assistant's own Home/Library/Search navigation nested one level down inside the Music tab
  * (see [MusicSection]).
  *
@@ -99,6 +102,7 @@ fun MainNavigationRoot(
     val backStacks = listOf(
         rememberAppTabBackStack(AppTab.Welcome),
         rememberAppTabBackStack(AppTab.Music),
+        rememberAppTabBackStack(AppTab.Lights),
         rememberAppTabBackStack(AppTab.LocalBusinesses),
         rememberAppTabBackStack(AppTab.ThingsToDo),
         rememberAppTabBackStack(AppTab.HouseManual),
@@ -159,22 +163,27 @@ fun MainNavigationRoot(
             label = stringResource(Res.string.nav_music),
         ),
         multiBackStack.createNavigationItem(
-            backStack = 2,
+            backStack = LIGHTS_TAB_INDEX,
+            icon = Icons.Default.Lightbulb,
+            label = stringResource(Res.string.nav_lights),
+        ),
+        multiBackStack.createNavigationItem(
+            backStack = 3,
             icon = Icons.Default.Call,
             label = stringResource(Res.string.nav_local_businesses),
         ),
         multiBackStack.createNavigationItem(
-            backStack = 3,
+            backStack = 4,
             icon = Icons.Default.Hiking,
             label = stringResource(Res.string.nav_things_to_do),
         ),
         multiBackStack.createNavigationItem(
-            backStack = 4,
+            backStack = 5,
             icon = Icons.Default.MenuBook,
             label = stringResource(Res.string.nav_house_manual),
         ),
         multiBackStack.createNavigationItem(
-            backStack = 5,
+            backStack = 6,
             icon = Icons.Default.PhotoCamera,
             label = stringResource(Res.string.nav_photo_share),
         ),
@@ -228,7 +237,10 @@ fun MainNavigationRoot(
 private const val MUSIC_TAB_INDEX = 1
 
 /** Index of [AppTab.FamilyCalendar] — the last tab in the bar; also opened from the Welcome tab. */
-private const val FAMILY_TAB_INDEX = 6
+private const val FAMILY_TAB_INDEX = 7
+
+/** Index of [AppTab.Lights] — right after Music; also opened from the Welcome tab. */
+private const val LIGHTS_TAB_INDEX = 2
 
 @Composable
 private fun appTabEntryProvider(
@@ -246,10 +258,11 @@ private fun appTabEntryProvider(
         WelcomeScreen(
             contentPadding = contentPadding,
             onOpenMusic = { multiBackStack.currentBackStack = MUSIC_TAB_INDEX },
-            onOpenLocalBusinesses = { multiBackStack.currentBackStack = 2 },
-            onOpenThingsToDo = { multiBackStack.currentBackStack = 3 },
-            onOpenHouseManual = { multiBackStack.currentBackStack = 4 },
-            onOpenPhotoShare = { multiBackStack.currentBackStack = 5 },
+            onOpenLights = { multiBackStack.currentBackStack = LIGHTS_TAB_INDEX },
+            onOpenLocalBusinesses = { multiBackStack.currentBackStack = 3 },
+            onOpenThingsToDo = { multiBackStack.currentBackStack = 4 },
+            onOpenHouseManual = { multiBackStack.currentBackStack = 5 },
+            onOpenPhotoShare = { multiBackStack.currentBackStack = 6 },
             onOpenFamilyCalendar = { multiBackStack.currentBackStack = FAMILY_TAB_INDEX },
         )
     }
@@ -265,6 +278,10 @@ private fun appTabEntryProvider(
             viewModeViewModel = viewModeViewModel,
             dspSettingsViewModel = dspSettingsViewModel,
         )
+    }
+
+    entry<AppTab.Lights> {
+        LightsScreen(contentPadding = contentPadding)
     }
 
     entry<AppTab.LocalBusinesses> {
@@ -355,7 +372,7 @@ private fun MusicTabGate(
     }
 }
 
-/** The app's 7 top-level tabs. Each is a single leaf screen except [Music], which nests its
+/** The app's 8 top-level tabs. Each is a single leaf screen except [Music], which nests its
  * own internal navigation (see [MainNav] / [MusicSection]). */
 private sealed interface AppTab : NavKey {
     @Serializable
@@ -363,6 +380,9 @@ private sealed interface AppTab : NavKey {
 
     @Serializable
     data object Music : AppTab
+
+    @Serializable
+    data object Lights : AppTab
 
     @Serializable
     data object LocalBusinesses : AppTab
@@ -389,6 +409,7 @@ private fun rememberAppTabBackStack(bottom: AppTab) = rememberNavBackStack(
                 polymorphic(NavKey::class) {
                     subclass(AppTab.Welcome::class, AppTab.Welcome.serializer())
                     subclass(AppTab.Music::class, AppTab.Music.serializer())
+                    subclass(AppTab.Lights::class, AppTab.Lights.serializer())
                     subclass(AppTab.LocalBusinesses::class, AppTab.LocalBusinesses.serializer())
                     subclass(AppTab.ThingsToDo::class, AppTab.ThingsToDo.serializer())
                     subclass(AppTab.HouseManual::class, AppTab.HouseManual.serializer())
