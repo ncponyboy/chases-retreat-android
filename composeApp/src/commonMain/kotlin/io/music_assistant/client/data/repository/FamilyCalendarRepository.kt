@@ -35,6 +35,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 /** A calendar entity on the family's Home Assistant (e.g. `calendar.family`). */
@@ -110,9 +111,29 @@ class FamilyCalendarRepository(
 
     /** The server the person is signed in to, without the scheme — for display. */
     val serverLabel: String?
-        get() = savedBaseUrl?.substringAfter("://")
+        get() = if (isDemo) "Demo calendar" else savedBaseUrl?.substringAfter("://")
+
+    /**
+     * Signed in to the built-in demo calendar (for App Review): sample stays generated on the
+     * phone, never any network call, so the demo login reaches nothing of the house's.
+     */
+    private val isDemo: Boolean
+        get() = savedBaseUrl == DEMO_BASE_URL
+
+    /** Stays added with "Schedule the house" while in demo mode; kept in memory only. */
+    private val demoAdded = mutableListOf<FamilyEvent>()
 
     suspend fun signIn(address: String, username: String, password: String): FamilyLoginResult {
+        if (address.trim().equals(DEMO_ADDRESS, ignoreCase = true)) {
+            if (username.trim() != DEMO_USERNAME || password != DEMO_PASSWORD) {
+                return FamilyLoginResult.Failure("Wrong username or password.")
+            }
+            clearSession()
+            demoAdded.clear()
+            secrets.putString(KEY_BASE_URL, DEMO_BASE_URL)
+            secrets.putString(KEY_REFRESH_TOKEN, DEMO_BASE_URL)
+            return FamilyLoginResult.Success
+        }
         val baseUrl = normalizeAddress(address)
             ?: return FamilyLoginResult.Failure("Enter your Home Assistant address, like example.ui.nabu.casa")
         return try {
@@ -229,8 +250,10 @@ class FamilyCalendarRepository(
     suspend fun signOut() {
         val baseUrl = savedBaseUrl
         val refresh = secrets.getStringOrNull(KEY_REFRESH_TOKEN)
+        val wasDemo = isDemo
         clearSession()
-        if (baseUrl != null && !refresh.isNullOrBlank()) {
+        demoAdded.clear()
+        if (!wasDemo && baseUrl != null && !refresh.isNullOrBlank()) {
             runCatching {
                 client.submitForm(
                     url = "$baseUrl/auth/revoke",
@@ -246,6 +269,7 @@ class FamilyCalendarRepository(
      * preferring the copy that can accept new events.
      */
     suspend fun calendars(): List<FamilyCalendar> {
+        if (isDemo) return listOf(FamilyCalendar(DEMO_CALENDAR_ID, "Chase's Retreat (demo)", canCreate = true))
         val body = authorizedGet("/api/calendars")
         val allowed = Json.parseToJsonElement(body).jsonArray.mapNotNull { item ->
             val obj = item as? JsonObject ?: return@mapNotNull null
@@ -277,6 +301,10 @@ class FamilyCalendarRepository(
         lastDay: LocalDate,
         notes: String?,
     ) {
+        if (isDemo) {
+            demoAdded += FamilyEvent(calendarId, title.trim(), firstDay, lastDay, null, null, null, notes?.trim()?.ifBlank { null })
+            return
+        }
         val body = buildJsonObject {
             put("entity_id", calendarId)
             put("summary", title.trim())
@@ -288,6 +316,9 @@ class FamilyCalendarRepository(
     }
 
     suspend fun events(calendarId: String, from: LocalDate, until: LocalDate): List<FamilyEvent> {
+        if (isDemo) {
+            return (demoEvents(calendarId) + demoAdded).filter { it.endDate >= from && it.startDate <= until }
+        }
         val zone = TimeZone.currentSystemDefault()
         val start = from.atStartOfDayIn(zone).toString()
         val end = until.plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone).toString()
@@ -298,6 +329,24 @@ class FamilyCalendarRepository(
         return (Json.parseToJsonElement(body) as? JsonArray).orEmpty().mapNotNull { item ->
             parseEvent(calendarId, item as? JsonObject ?: return@mapNotNull null, zone)
         }
+    }
+
+    /** Sample stays for the demo calendar, placed relative to today so they're always upcoming. */
+    private fun demoEvents(calendarId: String): List<FamilyEvent> {
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        fun day(offset: Int) = today.plus(offset, DateTimeUnit.DAY)
+        fun stay(title: String, first: Int, last: Int, notes: String? = null) =
+            FamilyEvent(calendarId, title, day(first), day(last), null, null, null, notes)
+        return listOf(
+            stay("Grandparents' visit", -2, 1, "Using the main floor bedroom."),
+            stay("Cousins' long weekend", 4, 7, "Bringing the kayaks."),
+            FamilyEvent(
+                calendarId, "Hot tub service", day(9), day(9), LocalTime(10, 0), LocalTime(11, 0),
+                "Hot tub deck", "Filter change and water test.",
+            ),
+            stay("Fall foliage trip", 12, 16),
+            stay("Thanksgiving week - whole family", 24, 31, "Everyone's here - book the extra cots."),
+        )
     }
 
     // ---- HTTP with automatic token refresh ----
@@ -424,6 +473,14 @@ class FamilyCalendarRepository(
         private const val REDIRECT_URI = "https://chasesretreat.app/callback"
         private const val KEY_BASE_URL = "family_calendar_base_url"
         private const val KEY_REFRESH_TOKEN = "family_calendar_refresh_token"
+
+        // Built-in demo calendar for App Review. Not a secret: it only unlocks sample data that
+        // lives in the app, and never talks to any server.
+        const val DEMO_ADDRESS = "demo"
+        const val DEMO_USERNAME = "appreview"
+        const val DEMO_PASSWORD = "family-demo"
+        private const val DEMO_BASE_URL = "demo://chases-retreat"
+        private const val DEMO_CALENDAR_ID = "calendar.demo_chases_retreat"
 
         /** "example.ui.nabu.casa" → "https://example.ui.nabu.casa"; keeps an explicit http://. */
         fun normalizeAddress(raw: String): String? {

@@ -60,6 +60,36 @@ class FamilyCalendarRepositoryTest {
     }
 
     @Test
+    fun demoCalendarWorksWithoutAnyNetwork() = runTest {
+        var requests = 0
+        val (repo, _) = repo {
+            requests++
+            respond("", HttpStatusCode.InternalServerError)
+        }
+        assertIs<FamilyLoginResult.Failure>(repo.signIn("demo", "appreview", "nope"))
+        assertEquals(
+            FamilyLoginResult.Success,
+            repo.signIn(" Demo ", FamilyCalendarRepository.DEMO_USERNAME, FamilyCalendarRepository.DEMO_PASSWORD),
+        )
+        assertTrue(repo.isSignedIn)
+        assertEquals("Demo calendar", repo.serverLabel)
+
+        val calendar = repo.calendars().single()
+        assertTrue(calendar.canCreate)
+        val from = LocalDate(2000, 1, 1)
+        val until = LocalDate(2100, 1, 1)
+        val sample = repo.events(calendar.entityId, from, until)
+        assertTrue(sample.size >= 4)
+
+        repo.createAllDayEvent(calendar.entityId, "Test stay", LocalDate(2030, 5, 1), LocalDate(2030, 5, 3), null)
+        assertTrue(repo.events(calendar.entityId, from, until).any { it.title == "Test stay" })
+
+        repo.signOut()
+        assertFalse(repo.isSignedIn)
+        assertEquals(0, requests, "The demo calendar must never contact a server")
+    }
+
+    @Test
     fun wrongPasswordIsAFriendlyFailure() = runTest {
         val (repo, _) = repo {
             when (it.url.encodedPath) {

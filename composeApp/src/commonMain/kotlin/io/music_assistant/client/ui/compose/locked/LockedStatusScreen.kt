@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,14 +20,20 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.music_assistant.client.api.ServiceClient
 import io.music_assistant.client.branding.BrandConfig
+import io.music_assistant.client.connection.ConnectionManager
+import io.music_assistant.client.webrtc.model.RemoteId
 import io.music_assistant.client.ui.compose.nav.exitApp
 import io.music_assistant.client.utils.AuthProcessState
 import io.music_assistant.client.utils.DataConnectionState
@@ -56,9 +64,12 @@ import org.koin.compose.koinInject
 @Composable
 fun LockedStatusScreen(showExitButton: Boolean = true) {
     val serviceClient: ServiceClient = koinInject()
+    val connectionManager: ConnectionManager = koinInject()
+    var showRemoteSignIn by remember { mutableStateOf(false) }
     val sessionState by serviceClient.sessionState.collectAsStateWithLifecycle()
+    val remoteRetryPending by connectionManager.remoteRetryPending.collectAsStateWithLifecycle()
 
-    val status = statusFor(sessionState)
+    val status = statusFor(sessionState, remoteRetryPending)
 
     Box(
         modifier = Modifier
@@ -120,10 +131,25 @@ fun LockedStatusScreen(showExitButton: Boolean = true) {
                 )
             }
             if (status is LockedStatus.NotOnNetwork || status is LockedStatus.SignInProblem) {
-                Button(onClick = { serviceClient.connect(BrandConfig.lockedConnectionInfo) }) {
+                // House address first; a saved remote-access login takes over if that fails.
+                Button(onClick = { connectionManager.retryConnection() }) {
                     Text("Try Again")
                 }
+                // Off-property access needs a login the host hands out (e.g. to App Review);
+                // the built-in guest login never works remotely. See RemoteAccess.
+                TextButton(onClick = { showRemoteSignIn = true }) {
+                    Text("Remote access sign-in")
+                }
             }
+        }
+        if (showRemoteSignIn) {
+            RemoteSignInDialog(
+                onDismiss = { showRemoteSignIn = false },
+                onSignIn = { remoteId, username, password ->
+                    showRemoteSignIn = false
+                    connectionManager.connectRemote(remoteId, username, password)
+                },
+            )
         }
         if (showExitButton) {
             TextButton(
@@ -161,7 +187,16 @@ private sealed interface LockedStatus {
     }
 }
 
+private fun statusFor(sessionState: SessionState, remoteRetryPending: Boolean): LockedStatus =
+    // A dropped remote-access session that is retrying on its own, not a Wi-Fi problem.
+    if (remoteRetryPending && sessionState is SessionState.Disconnected.Error) {
+        LockedStatus.Progress("Reconnecting…")
+    } else {
+        statusFor(sessionState)
+    }
+
 private fun statusFor(sessionState: SessionState): LockedStatus = when (sessionState) {
+
     is SessionState.Connecting -> LockedStatus.Progress("Connecting…")
 
     is SessionState.Connected -> when (val dcs = sessionState.dataConnectionState) {
@@ -178,8 +213,73 @@ private fun statusFor(sessionState: SessionState): LockedStatus = when (sessionS
 
     is SessionState.Disconnected.Error -> LockedStatus.NotOnNetwork
     SessionState.Disconnected.NoServerData -> LockedStatus.NotOnNetwork
+    // ByUser here means a connection was deliberately dropped (e.g. a remote session with no
+    // remote-access login), so offer the same Try Again / sign-in choices.
+    SessionState.Disconnected.ByUser -> LockedStatus.NotOnNetwork
     SessionState.Disconnected.Initial,
-    SessionState.Disconnected.ByUser,
     SessionState.Disconnected.Backgrounded,
         -> LockedStatus.Progress("Connecting…")
+}
+
+@Composable
+private fun RemoteSignInDialog(
+    onDismiss: () -> Unit,
+    onSignIn: (RemoteId, String, String) -> Unit,
+) {
+    var accessCode by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var codeError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Remote access sign-in") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "For use away from Chase's Retreat with a login from your host.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedTextField(
+                    value = accessCode,
+                    onValueChange = { accessCode = it; codeError = false },
+                    label = { Text("Access code") },
+                    isError = codeError,
+                    supportingText = if (codeError) {
+                        { Text("That access code isn't valid.") }
+                    } else {
+                        null
+                    },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = accessCode.isNotBlank() && username.isNotBlank() && password.isNotEmpty(),
+                onClick = {
+                    val id = RemoteId.parse(accessCode)
+                    if (id == null) codeError = true else onSignIn(id, username, password)
+                },
+            ) {
+                Text("Sign in")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }

@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import io.music_assistant.client.api.Request
 import io.music_assistant.client.api.ServiceClient
 import io.music_assistant.client.branding.BrandConfig
+import io.music_assistant.client.connection.RemoteAccess
 import io.music_assistant.client.data.model.server.AuthProvider
 import io.music_assistant.client.data.model.server.OauthUrl
 import io.music_assistant.client.data.model.server.User
@@ -95,7 +96,27 @@ class AuthenticationManager(
                                     // just completed an interactive login, so no server-id
                                     // check applies — the fresh token defines the server.
                                     val pending = pendingOAuthToken
-                                    if (pending != null) {
+                                    val remote = RemoteAccess.credentials
+                                    if (state is SessionState.Connected.WebRTC) {
+                                        // Off-property session: only the separately issued
+                                        // remote-access login may be used. The built-in guest
+                                        // login and any saved house token are never sent over
+                                        // WebRTC, so a public install can't reach the house
+                                        // server (or the host's music accounts) from outside.
+                                        if (remote != null) {
+                                            log.i { "AwaitingAuth(NotStarted) — remote session, using remote-access login" }
+                                            _isLoggingOut.value = false
+                                            _authState.value = AuthState.Loading
+                                            serviceClient.login(
+                                                username = remote.username,
+                                                password = remote.password,
+                                                isAutoLogin = true,
+                                            )
+                                        } else {
+                                            log.w { "AwaitingAuth(NotStarted) — remote session without a remote-access login; disconnecting" }
+                                            serviceClient.disconnectByUser()
+                                        }
+                                    } else if (pending != null) {
                                         log.i { "AwaitingAuth(NotStarted) — spending pending OAuth token" }
                                         authorizeWithOAuthToken(pending)
                                     } else if (isLoggingOut) {

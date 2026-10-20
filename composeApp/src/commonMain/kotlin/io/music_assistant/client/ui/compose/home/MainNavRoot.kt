@@ -48,6 +48,8 @@ import io.music_assistant.client.ui.compose.nav.createNavigationItem
 import io.music_assistant.client.ui.compose.photoshare.PhotoShareScreen
 import io.music_assistant.client.ui.compose.thingstodo.ThingsToDoScreen
 import io.music_assistant.client.ui.compose.welcome.WelcomeScreen
+import io.music_assistant.client.connection.ConnectionManager
+import io.music_assistant.client.utils.AuthProcessState
 import io.music_assistant.client.utils.DataConnectionState
 import io.music_assistant.client.utils.SessionState
 import kotlinx.serialization.Serializable
@@ -309,20 +311,29 @@ private fun MusicTabGate(
     dspSettingsViewModel: DspSettingsViewModel,
 ) {
     val serviceClient: ServiceClient = koinInject()
+    val connectionManager: ConnectionManager = koinInject()
     val sessionState by serviceClient.sessionState.collectAsStateWithLifecycle()
+    // App-wide, so switching tabs doesn't forget that this session already signed in.
+    val everAuthenticated by connectionManager.hasAuthenticated.collectAsStateWithLifecycle()
+    val remoteRetryPending by connectionManager.remoteRetryPending.collectAsStateWithLifecycle()
 
-    var everAuthenticated by remember { mutableStateOf(false) }
-    LaunchedEffect(sessionState) {
-        if ((sessionState as? SessionState.Connected)?.dataConnectionState is DataConnectionState.Authenticated) {
-            everAuthenticated = true
+    val showMusicSection = when (val state = sessionState) {
+        is SessionState.Connected -> when (val dcs = state.dataConnectionState) {
+            is DataConnectionState.Authenticated -> true
+            // Re-signing in after a reconnect: keep the music on screen unless sign-in failed.
+            is DataConnectionState.AwaitingAuth -> everAuthenticated && dcs.authProcessState !is AuthProcessState.Failed
+            DataConnectionState.AwaitingServerInfo -> everAuthenticated
         }
-    }
-
-    val showMusicSection = when {
-        (sessionState as? SessionState.Connected)?.dataConnectionState is DataConnectionState.Authenticated -> true
-        everAuthenticated && sessionState is SessionState.Reconnecting -> true
-        everAuthenticated && sessionState is SessionState.Disconnected.Backgrounded -> true
-        else -> false
+        is SessionState.Reconnecting,
+        SessionState.Connecting,
+        SessionState.Disconnected.Backgrounded,
+        SessionState.Disconnected.Initial,
+            -> everAuthenticated
+        // A dropped remote session that is retrying on its own isn't an error yet.
+        is SessionState.Disconnected.Error -> everAuthenticated && remoteRetryPending
+        SessionState.Disconnected.ByUser,
+        SessionState.Disconnected.NoServerData,
+            -> false
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

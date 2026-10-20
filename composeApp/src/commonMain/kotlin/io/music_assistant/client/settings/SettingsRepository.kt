@@ -3,6 +3,7 @@ package io.music_assistant.client.settings
 import com.russhwolf.settings.Settings
 import io.music_assistant.client.api.ConnectionInfo
 import io.music_assistant.client.branding.BrandConfig
+import io.music_assistant.client.connection.RemoteAccess
 import io.music_assistant.client.data.model.client.ClickContext
 import io.music_assistant.client.data.model.client.GenreEmptyFilter
 import io.music_assistant.client.data.model.client.ItemKind
@@ -131,6 +132,30 @@ class SettingsRepository(
             secrets.remove("$TOKEN_PREFIX$serverId")
         } else {
             secrets.putString("$TOKEN_PREFIX$serverId", token)
+        }
+    }
+
+    /**
+     * The off-property ("Remote access sign-in") login, or null if nobody has signed in remotely.
+     * Kept in [secrets] so a relaunch or a dropped connection can reconnect remotely on its own.
+     */
+    fun getRemoteAccessLogin(): RemoteAccess.Credentials? {
+        val remoteId = secrets.getStringOrNull(REMOTE_ACCESS_ID_KEY) ?: return null
+        val username = secrets.getStringOrNull(REMOTE_ACCESS_USER_KEY) ?: return null
+        val password = secrets.getStringOrNull(REMOTE_ACCESS_PASSWORD_KEY) ?: return null
+        return RemoteAccess.Credentials(remoteId, username, password)
+    }
+
+    /** Save the remote-access login (null to forget it). */
+    fun setRemoteAccessLogin(credentials: RemoteAccess.Credentials?) {
+        if (credentials == null) {
+            secrets.remove(REMOTE_ACCESS_ID_KEY)
+            secrets.remove(REMOTE_ACCESS_USER_KEY)
+            secrets.remove(REMOTE_ACCESS_PASSWORD_KEY)
+        } else {
+            secrets.putString(REMOTE_ACCESS_ID_KEY, credentials.remoteId)
+            secrets.putString(REMOTE_ACCESS_USER_KEY, credentials.username)
+            secrets.putString(REMOTE_ACCESS_PASSWORD_KEY, credentials.password)
         }
     }
 
@@ -782,6 +807,9 @@ class SettingsRepository(
         // when it authenticates to the user's server or identifies it.
         private const val TOKEN_PREFIX = "token_"
         private const val SERVER_ID_PREFIX = "id_"
+        private const val REMOTE_ACCESS_ID_KEY = "remote_access_id"
+        private const val REMOTE_ACCESS_USER_KEY = "remote_access_username"
+        private const val REMOTE_ACCESS_PASSWORD_KEY = "remote_access_password"
         private val SECRET_STRING_KEYS = listOf(
             "host",
             "webrtc_remote_id",
